@@ -1,11 +1,8 @@
 version: "3"
 services:
   node01:
-    image: redgreat/otter
-    build:
-      context: .
-      dockerfile: otter/Dockerfile
-    restart: always
+    image: registry.cn-hangzhou.aliyuncs.com/redgreat/otter
+    restart: unless-stopped
     container_name: node01
     hostname: node01
     networks:
@@ -26,13 +23,15 @@ services:
       - "node01:10.10.20.11"
       - "node02:10.10.20.12"      
       - "node03:10.10.20.13"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1'
 
   node02:
-    image: redgreat/otter
-    build:
-      context: .
-      dockerfile: otter/Dockerfile
-    restart: always
+    image: registry.cn-hangzhou.aliyuncs.com/redgreat/otter
+    restart: unless-stopped
     container_name: node02
     hostname: node02
     networks:
@@ -53,13 +52,15 @@ services:
       - "node03:10.10.20.13" 
     depends_on:
       - node01
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1'
 
   node03:
-    image: redgreat/otter
-    build:
-      context: .
-      dockerfile: otter/Dockerfile
-    restart: always
+    image: registry.cn-hangzhou.aliyuncs.com/redgreat/otter
+    restart: unless-stopped
     container_name: node03
     hostname: node03
     networks:
@@ -80,11 +81,16 @@ services:
       - "node03:10.10.20.13"
     depends_on:
       - node01
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1'
 
 networks:
   otter:
     driver: bridge
     ipam:
       config:
-        - subnet: 10.10.20.0/16
+        - subnet: 10.10.0.0/16
           gateway: 10.10.20.1

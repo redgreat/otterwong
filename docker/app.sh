@@ -264,6 +264,9 @@ function start_mysql() {
     # start mysql
     rm -rf /var/lib/mysql/mysql.sock
     rm -rf /var/lib/mysql/mysql.sock.lock
+    # 确保mysqld目录存在
+    mkdir -p /var/run/mysqld
+    chown -R mysql:mysql /var/run/mysqld
     cmd="sed -i -e 's/^server-id.*$/server-id=${ZOO_MY_ID:-1}/' /etc/my.cnf"
     eval $cmd
     if [ -z "$(ls -A /var/lib/mysql)" ]; then
@@ -271,7 +274,7 @@ function start_mysql() {
         cmd="sed -i -e  '2a skip-grant-tables' /etc/my.cnf"
         eval $cmd
         /usr/sbin/mysqld --user=mysql --datadir=/var/lib/mysql --initialize 1>>/tmp/start.log 2>&1
-        service mysqld start
+        /usr/sbin/mysqld --user=mysql --datadir=/var/lib/mysql --daemonize --pid-file=/var/run/mysqld/mysqld.pid 1>>/tmp/start.log 2>&1
         echo "PASSWORD:${MYSQL_ROOT_PASSWORD}"
         mysql -e "UPDATE mysql.user SET authentication_string = PASSWORD('${MYSQL_ROOT_PASSWORD}') where user='root';flush privileges;"
         cmd="sed -i '/skip-grant-tables/d' /etc/my.cnf"
@@ -287,7 +290,7 @@ function start_mysql() {
         echo "flush privileges;" >> $TEMP_FILE
         echo "start mysql ..."
         mysqladmin -uroot -p${MYSQL_ROOT_PASSWORD} shutdown
-        service mysqld start
+        /usr/sbin/mysqld --user=mysql --datadir=/var/lib/mysql --daemonize --pid-file=/var/run/mysqld/mysqld.pid 1>>/tmp/start.log 2>&1
         MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql --connect-expired-password -h127.0.0.1 -uroot -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${MYSQL_ROOT_PASSWORD}';flush privileges;"
         MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql -h127.0.0.1 -uroot -e "source $TEMP_FILE" 1>>/tmp/start.log 2>&1
         checkStart "mysql" "echo 'show status' | MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql -s -P3306 -uroot | grep -c Uptime" 120
@@ -328,7 +331,7 @@ function start_mysql() {
     else
         echo "start mysql ..."
         chown -R mysql:mysql /var/lib/mysql
-        service mysqld start
+        /usr/sbin/mysqld --user=mysql --datadir=/var/lib/mysql --daemonize --pid-file=/var/run/mysqld/mysqld.pid 1>>/tmp/start.log 2>&1
         #check start
         checkStart "mysql" "echo 'show status' | MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql -b -s -P3306 -uroot | grep -c Uptime" 120
     fi
@@ -337,7 +340,10 @@ function start_mysql() {
 function stop_mysql() {
     echo "stop mysql ..."
     # stop mysql
-    service mysqld stop
+    if [ -f /var/run/mysqld/mysqld.pid ]; then
+        kill $(cat /var/run/mysqld/mysqld.pid)
+    fi
+    pkill -f mysqld
     echo "stop mysql successful ..."
 }
 
