@@ -1,9 +1,11 @@
 # 第一阶段：基础系统和Java环境
-FROM centos:centos7.9.2009 as base
+FROM centos:centos7.9.2009 AS base
 
 MAINTAINER wangcw (rubygreat@msn.com)
 
 ENV DOWNLOAD_LINK="http://download.oracle.com/otn-pub/java/jdk/8u181-b13/96a7b8442fe848ef90c96a2fad6ed6d1/jdk-8u181-linux-x64.rpm"
+
+COPY docker/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo
 
 # 安装基础系统组件
 RUN \
@@ -41,7 +43,7 @@ RUN \
     true
 
 # 第二阶段：安装MySQL和ZooKeeper
-FROM base as osbase
+FROM base AS osbase
 
 COPY ./docker/aria2c /bin/aria2c
 COPY ./docker/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo
@@ -66,7 +68,7 @@ RUN \
     true
 
 # 第三阶段：安装Otter应用
-FROM osbase as otter
+FROM osbase AS otter
 
 EXPOSE 8080 8081 2181 8018 2088 2089 2090 3306
 
@@ -100,6 +102,10 @@ RUN \
 ENV DOCKER_DEPLOY_TYPE=VM PATH=$PATH:/usr/local/mysql/bin:/usr/local/mysql/scripts
 
 WORKDIR /home/admin
+
+LABEL maintainer="wangcw <rubygreat@msn.com>" \
+      version="1.0" \
+      description="Otter数据同步中间件"
 
 ENTRYPOINT [ "/alidata/bin/main.sh" ]
 CMD [ "/home/admin/app.sh" ]
