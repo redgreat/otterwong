@@ -1,1 +1,0 @@
-docker build -t redgreat/otter-osbase:v1.0 .
