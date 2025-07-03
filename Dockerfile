@@ -1,9 +1,7 @@
 # 第一阶段：基础系统和Java环境
 FROM centos:centos7.9.2009 AS base
 
-MAINTAINER wangcw (rubygreat@msn.com)
-
-ENV DOWNLOAD_LINK="http://download.oracle.com/otn-pub/java/jdk/8u181-b13/96a7b8442fe848ef90c96a2fad6ed6d1/jdk-8u181-linux-x64.rpm"
+ENV DOWNLOAD_LINK="https://repo.huaweicloud.com/java/jdk/8u181-b13/jdk-8u181-linux-x64.tar.gz"
 
 COPY docker/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo
 
@@ -34,7 +32,7 @@ RUN \
 # 安装Java环境
 RUN \
     touch /var/lib/rpm/* && \
-    wget --no-cookies --no-check-certificate --header "Cookie: gpw_e24=xxx; oraclelicense=accept-securebackup-cookie" "$DOWNLOAD_LINK" -O /tmp/jdk-8-linux-x64.rpm && \
+    wget --n--noooi-s --no-check-cectificate "$DOWNLOAD_LINK" -O /tmp/jdk-8-linux-x64.rpm && \
     yum -y install /tmp/jdk-8-linux-x64.rpm && \
     /bin/rm -f /tmp/jdk-8-linux-x64.rpm && \
     echo "export JAVA_HOME=/usr/java/latest" >> /etc/profile && \
