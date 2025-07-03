@@ -32,7 +32,7 @@ RUN \
 # 安装Java环境
 RUN \
     touch /var/lib/rpm/* && \
-    wget --n--noooi-s --no-check-cectificate "$DOWNLOAD_LINK" -O /tmp/jdk-8-linux-x64.rpm && \
+    wget --no-cookies --no-check-certificate "$DOWNLOAD_LINK" -O /tmp/jdk-8-linux-x64.rpm && \
     yum -y install /tmp/jdk-8-linux-x64.rpm && \
     /bin/rm -f /tmp/jdk-8-linux-x64.rpm && \
     echo "export JAVA_HOME=/usr/java/latest" >> /etc/profile && \
