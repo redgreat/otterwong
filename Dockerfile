@@ -32,9 +32,11 @@ RUN \
 # 安装Java环境
 RUN \
     touch /var/lib/rpm/* && \
-    wget --no-cookies --no-check-certificate "$DOWNLOAD_LINK" -O /tmp/jdk-8-linux-x64.rpm && \
-    yum -y install /tmp/jdk-8-linux-x64.rpm && \
-    /bin/rm -f /tmp/jdk-8-linux-x64.rpm && \
+    wget --no-cookies --no-check-certificate "$DOWNLOAD_LINK" -O /tmp/jdk-8-linux-x64.tar.gz && \
+    mkdir -p /usr/java && \
+    tar -xzf /tmp/jdk-8-linux-x64.tar.gz -C /usr/java && \
+    ln -s /usr/java/jdk1.8.0_181 /usr/java/latest && \
+    /bin/rm -f /tmp/jdk-8-linux-x64.tar.gz && \
     echo "export JAVA_HOME=/usr/java/latest" >> /etc/profile && \
     echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> /etc/profile && \
     yum clean all && \
