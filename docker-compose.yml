@@ -1,0 +1,90 @@
+version: "3"
+services:
+  node01:
+    image: redgreat/otter
+    build:
+      context: .
+      dockerfile: otter/Dockerfile
+    restart: always
+    container_name: node01
+    hostname: node01
+    networks:
+      otter:
+        ipv4_address: 10.10.20.11
+    ports:
+      - 8080:8080 
+      - 8018:8018
+      - 33061:3306 
+    environment:
+      TZ: Asia/Shanghai
+      ZOO_CLUSTER: node01:2181,node02:2181,node03:2181
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=node01:2888:3888 server.2=node02:2888:3888 server.3=node03:2888:3888
+      RUN_MODE: ALL # ALL,MANAGER,NODE
+      MANAGER_ADD:  10.10.20.11
+    extra_hosts:
+      - "node01:10.10.20.11"
+      - "node02:10.10.20.12"      
+      - "node03:10.10.20.13"
+
+  node02:
+    image: redgreat/otter
+    build:
+      context: .
+      dockerfile: otter/Dockerfile
+    restart: always
+    container_name: node02
+    hostname: node02
+    networks:
+      otter:
+        ipv4_address: 10.10.20.12
+    ports:
+      - 33062:3306 
+    environment:
+      TZ: Asia/Shanghai
+      ZOO_CLUSTER: node01:2181,node02:2181,node03:2181
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=node01:2888:3888 server.2=node02:2888:3888 server.3=node03:2888:3888
+      RUN_MODE: NODE
+      MANAGER_ADD:  10.10.20.11
+    extra_hosts:
+      - "node01:10.10.20.11"
+      - "node02:10.10.20.12"      
+      - "node03:10.10.20.13" 
+    depends_on:
+      - node01
+
+  node03:
+    image: redgreat/otter
+    build:
+      context: .
+      dockerfile: otter/Dockerfile
+    restart: always
+    container_name: node03
+    hostname: node03
+    networks:
+      otter:
+        ipv4_address: 10.10.20.13
+    ports:
+      - 33063:3306 
+    environment:
+      TZ: Asia/Shanghai
+      ZOO_CLUSTER: node01:2181,node02:2181,node03:2181
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=node01:2888:3888 server.2=node02:2888:3888 server.3=node03:2888:3888
+      RUN_MODE: NODE
+      MANAGER_ADD:  10.10.20.11
+    extra_hosts:
+      - "node01:10.10.20.11"
+      - "node02:10.10.20.12"      
+      - "node03:10.10.20.13"
+    depends_on:
+      - node01
+
+networks:
+  otter:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.20.0/16
+          gateway: 10.10.20.1

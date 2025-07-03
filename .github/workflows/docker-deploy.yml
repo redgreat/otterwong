@@ -1,0 +1,129 @@
+name: Build and Deploy Docker Images
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  ALIYUN_REGISTRY: registry.cn-hangzhou.aliyuncs.com
+  ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
+  ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
+  ALIYUN_NAMESPACE: ${{ secrets.ALIYUN_NAMESPACE }}
+  OSBASE_IMAGE_NAME: osbase
+  OTTER_IMAGE_NAME: otter
+
+jobs:
+  build-osbase:
+    runs-on: ubuntu-latest
+    outputs:
+      osbase-tag: ${{ steps.meta.outputs.tags }}
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: 登录阿里云容器镜像服务
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.ALIYUN_REGISTRY }}
+        username: ${{ env.ALIYUN_USERNAME }}
+        password: ${{ env.ALIYUN_PASSWORD }}
+
+    - name: 提取元数据
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/${{ env.OSBASE_IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=ref,event=tag
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: 构建并推送osbase镜像
+      uses: docker/build-push-action@v5
+      with:
+        context: ./osbase
+        file: ./osbase/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  build-otter:
+    runs-on: ubuntu-latest
+    needs: build-osbase
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: 登录阿里云容器镜像服务
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.ALIYUN_REGISTRY }}
+        username: ${{ env.ALIYUN_USERNAME }}
+        password: ${{ env.ALIYUN_PASSWORD }}
+
+    - name: 提取元数据
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/${{ env.OTTER_IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=ref,event=tag
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: 修改otter Dockerfile基础镜像
+      run: |
+        # 获取osbase镜像标签
+        OSBASE_TAG=$(echo "${{ needs.build-osbase.outputs.osbase-tag }}" | head -n1)
+        echo "使用osbase镜像: $OSBASE_TAG"
+        
+        # 修改otter Dockerfile的FROM指令
+        sed -i "1s/.*/FROM $OSBASE_TAG/" ./otter/Dockerfile
+        
+        # 显示修改后的Dockerfile前几行
+        echo "修改后的Dockerfile:"
+        head -5 ./otter/Dockerfile
+
+    - name: 构建并推送otter镜像
+      uses: docker/build-push-action@v5
+      with:
+        context: ./otter
+        file: ./otter/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [build-osbase, build-otter]
+    if: always()
+    steps:
+    - name: 部署结果通知
+      run: |
+        if [ "${{ needs.build-osbase.result }}" == "success" ] && [ "${{ needs.build-otter.result }}" == "success" ]; then
+          echo "✅ 所有镜像构建并推送成功！"
+          echo "🐳 osbase镜像: ${{ needs.build-osbase.outputs.osbase-tag }}"
+          echo "🦦 otter镜像已推送到阿里云镜像仓库"
+        else
+          echo "❌ 镜像构建失败，请检查日志"
+          exit 1
+        fi
