@@ -10,10 +10,10 @@ on:
 env:
   ALIYUN_REGISTRY: registry.cn-hangzhou.aliyuncs.com
   ALIYUN_NAMESPACE: ${{ secrets.ALIYUN_NAMESPACE }}
-  MERGED_IMAGE_NAME: otter-merged
+  MERGED_IMAGE_NAME: otter
 
 jobs:
-  build-merged:
+  build-otter:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -29,7 +29,7 @@ jobs:
           username: ${{ secrets.ALIYUN_USERNAME }}
           password: ${{ secrets.ALIYUN_PASSWORD }}
 
-      - name: Extract metadata for Merged Image
+      - name: Extract metadata for otter Image
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -53,12 +53,12 @@ jobs:
 
   notify:
     runs-on: ubuntu-latest
-    needs: [build-merged]
+    needs: [build-otter]
     if: always()
     steps:
       - name: Deployment Result
         run: |
-          if [[ "${{ needs.build-merged.result }}" == "success" ]]; then
+          if [[ "${{ needs.build-otter.result }}" == "success" ]]; then
             echo "✅ 合并镜像已成功部署到阿里云镜像仓库"
             echo "🚀 镜像名称: ${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/${{ env.MERGED_IMAGE_NAME }}"
           else

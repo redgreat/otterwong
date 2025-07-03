@@ -78,11 +78,8 @@ COPY ./docker/my.cnf /etc/my.cnf
 
 # 安装Otter应用
 RUN \
-    cp -R /tmp/docker/alidata /alidata && \
-    chmod +x /alidata/bin/* && \
-    mkdir -p /home/admin && \
-    cp -R /tmp/docker/admin/* /home/admin/  && \
-    /bin/cp -f alidata/bin/lark-wait /usr/bin/lark-wait && \
+    mkdir -p /alidata/bin && \
+    mkdir -p /home/admin/bin && \
     mkdir -p /home/admin/manager && \
     tar -xzvf /tmp/docker/manager.deployer-*.tar.gz -C /home/admin/manager && \
     mkdir -p /home/admin/node && \
@@ -93,7 +90,6 @@ RUN \
     mkdir -p /home/admin/node/logs  && \
     mkdir -p /home/admin/zkData  && \
     chmod +x /home/admin/*.sh  && \
-    chmod +x /home/admin/bin/*.sh  && \
     chown admin: -R /home/admin && \
     yum clean all && \
     echo "otter.zookeeper.cluster.default = 127.0.0.1:2181" >> "/home/admin/node/conf/otter.properties" && \
@@ -107,5 +103,4 @@ LABEL maintainer="wangcw <rubygreat@msn.com>" \
       version="1.0" \
       description="Otter数据同步中间件"
 
-ENTRYPOINT [ "/alidata/bin/main.sh" ]
-CMD [ "/home/admin/app.sh" ]
+ENTRYPOINT [ "/home/admin/app.sh" ]
