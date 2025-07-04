@@ -90,6 +90,8 @@ RUN \
     chown admin: -R /home/admin && \
     yum clean all && \
     echo "otter.zookeeper.cluster.default = 127.0.0.1:2181" >> "/home/admin/node/conf/otter.properties" && \
+    sed -i 's/-XX:PermSize=96m//g; s/-XX:MaxPermSize=256m//g; s/-XX:+UseCMSCompactAtFullCollection//g; s/-XX:-UseAdaptiveSizePolicy//g; s/-XX:+CMSParallelRemarkEnabled//g; s/-XX:+UseFastAccessorMethods//g; s/-XX:+UseCMSInitiatingOccupancyOnly//g; s/-XX:+UseConcMarkSweepGC/-XX:+UseG1GC -XX:MaxGCPauseMillis=200/g; s/-Xmx3072m/-Xmx2048m/g; s/-Xmn1024m/-XX:NewRatio=1/g; s/-XX:SurvivorRatio=2/-XX:SurvivorRatio=8/g' /home/admin/manager/bin/startup.sh && \
+    sed -i 's/-XX:PermSize=96m//g; s/-XX:MaxPermSize=256m//g; s/-XX:+UseCMSCompactAtFullCollection//g; s/-XX:-UseAdaptiveSizePolicy//g; s/-XX:+CMSParallelRemarkEnabled//g; s/-XX:+UseFastAccessorMethods//g; s/-XX:+UseCMSInitiatingOccupancyOnly//g; s/-XX:+UseConcMarkSweepGC/-XX:+UseG1GC -XX:MaxGCPauseMillis=200/g; s/-Xmx3072m/-Xmx2048m/g; s/-Xmn1024m/-XX:NewRatio=1/g; s/-XX:SurvivorRatio=2/-XX:SurvivorRatio=8/g' /home/admin/node/bin/startup.sh && \
     true
 
 ENV DOCKER_DEPLOY_TYPE=VM

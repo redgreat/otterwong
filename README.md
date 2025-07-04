@@ -161,6 +161,38 @@ cd /home/admin
 docker restart otter
 ```
 
+### JVM参数警告问题
+#### Java 8废弃参数警告
+如果看到以下警告信息：
+```
+Java HotSpot(TM) 64-Bit Server VM warning: ignoring option PermSize=96m; support was removed in 8.0
+Java HotSpot(TM) 64-Bit Server VM warning: ignoring option MaxPermSize=256m; support was removed in 8.0
+Java HotSpot(TM) 64-Bit Server VM warning: UseCMSCompactAtFullCollection is deprecated
+```
+
+**解决方案：**
+1. **自动修复（推荐）**：重新构建镜像，Dockerfile已包含JVM参数优化
+```bash
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+2. **手动修复**：使用提供的修复脚本
+```bash
+# 在容器内执行
+docker exec -it otter bash /home/admin/scripts/fix-jvm-params.sh
+
+# 或在宿主机执行
+bash scripts/fix-jvm-params.sh
+```
+
+**优化内容：**
+- 移除Java 8已废弃的PermSize相关参数
+- 替换CMS垃圾收集器为G1GC
+- 优化内存配置，减少资源占用
+- 添加GC暂停时间控制
+
 #### 其他问题
 - 检查端口是否被占用：`netstat -tulpn | grep 2181`
 - 查看ZooKeeper日志：`docker exec -it otter tail -f /home/admin/zkData/zookeeper.log`
