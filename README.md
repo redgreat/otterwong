@@ -41,9 +41,7 @@ FLUSH PRIVILEGES;
 
 ### 3. 初始化数据库表结构
 
-从 [Otter 官方仓库](https://github.com/alibaba/otter) 下载并执行以下 SQL 文件：
-- `manager/deployer/src/main/resources/sql/otter-manager-schema.sql`
-- `shared/etl/src/main/resources/sql/otter-manager-system.sql`
+`docker/otter-manager-schema.sql`
 
 ### 4. 配置数据库连接
 
@@ -55,8 +53,6 @@ otter.database.driver.url = jdbc:mysql://your-mysql-host:3306/otter?useUnicode=t
 otter.database.driver.username = otter
 otter.database.driver.password = otter_password
 ```
-
-详细配置说明请参考 [config/README.md](config/README.md)
 
 ### 5. 启动服务
 
@@ -94,6 +90,7 @@ otterwong/
     ├── app.sh                             # 容器启动脚本
     ├── manager.deployer-4.2.19-SNAPSHOT.tar.gz
     ├── node.deployer-4.2.19-SNAPSHOT.tar.gz
+    ├── otter-manager-schema.sql
     └── apache-zookeeper-3.7.0-bin.tar.gz
 ```
 
