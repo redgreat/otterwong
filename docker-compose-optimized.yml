@@ -1,0 +1,84 @@
+version: "3.8"
+services:
+  otter:
+    image: registry.cn-hangzhou.aliyuncs.com/redgreat/otter
+    restart: unless-stopped
+    container_name: otter
+    hostname: otter
+    networks:
+      otter:
+        ipv4_address: 10.10.20.11
+    ports:
+      - "8080:8080"   # Manager Web 界面
+      - "8018:8018"   # ZooKeeper Admin
+      - "2181:2181"   # ZooKeeper 客户端
+      - "2088:2088"   # Node 服务端口
+      - "2089:2089"   # Node 下载端口
+      - "2090:2090"   # Node MBean 端口
+    volumes:
+      - ./config/manager:/home/admin/manager/conf
+      - ./config/node:/home/admin/node/conf
+      - otter_zk_data:/home/admin/zkData
+      - otter_zk_logs:/home/admin/zookeeper-3.7.0/logs
+      - otter_manager_logs:/home/admin/manager/logs
+      - otter_node_logs:/home/admin/node/logs
+    environment:
+      TZ: Asia/Shanghai
+      # ZooKeeper 配置
+      ZOO_CLUSTER: otter:2181
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=otter:2888:3888
+      # ZooKeeper 优化参数
+      ZOO_TICK_TIME: 2000
+      ZOO_INIT_LIMIT: 10
+      ZOO_SYNC_LIMIT: 5
+      ZOO_MAX_CLIENT_CNXNS: 60
+      ZOO_AUTOPURGE_PURGEINTERVAL: 1
+      ZOO_AUTOPURGE_SNAPRETAINCOUNT: 3
+      # Otter 配置
+      RUN_MODE: ALL
+      MANAGER_ADD: 10.10.20.11
+      # JVM 内存配置
+      JAVA_OPTS: "-Xms512m -Xmx1536m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+    extra_hosts:
+      - "otter:10.10.20.11"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+volumes:
+  otter_zk_data:
+    driver: local
+  otter_zk_logs:
+    driver: local
+  otter_manager_logs:
+    driver: local
+  otter_node_logs:
+    driver: local
+
+networks:
+  otter:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.0.0/16
+          gateway: 10.10.20.1
+    driver_opts:
+      com.docker.network.bridge.name: br-otter
+      com.docker.network.driver.mtu: 1500

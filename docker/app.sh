@@ -10,8 +10,6 @@ chown admin: /home/admin/manager
 chown admin: /home/admin/zkData
 host=`hostname -i`
 
-
-# default config
 if [ -z "${RUN_MODE}" ]; then
     RUN_MODE="ALL"
 fi
@@ -20,9 +18,6 @@ if [ -z "${MANAGER_ADD}" ]; then
     RUN_MODE="10.21.0.10"
 fi
 
-
-
-# default zookeeper config
 ZOO_DIR=/home/admin/zookeeper-3.7.0
 ZOO_CONF_DIR=$ZOO_DIR/conf
 ZOO_DATA_DIR=/home/admin/zkData 
@@ -49,13 +44,9 @@ waitterm() {
         # any process to block
         tail -f /dev/null &
         PID="$!"
-        # setup trap, could do nothing, or just kill the blocker
         trap "kill -TERM ${PID}" TERM INT
-        # wait for signal, ignore wait exit code
         wait "${PID}" || true
-        # clear trap
         trap - TERM INT
-        # wait blocker, ignore blocker exit code
         wait "${PID}" 2>/dev/null || true
 }
 
@@ -82,12 +73,10 @@ waittermpid() {
         return "${error}"
 }
 
-
 function checkStart() {
     local name=$1
     local cmd=$2
     local timeout=$3
-    #隐藏光标
     printf "\e[?25l" 
     i=0
     str=""
@@ -106,7 +95,6 @@ function checkStart() {
             totalstr="${space48}${percentstr}${space48}"
             leadingstr="${totalstr:0:$i+1}"
             trailingstr="${totalstr:$i+1}"
-            #打印进度,#docker中进度条不刷新
             printf "\r\e[30;47m${leadingstr}\e[37;40m${trailingstr}\e[0m"
             let i=$i+1
             str="${str}="
@@ -120,14 +108,22 @@ function checkStart() {
     else
         echo -e "\033[31m $name start timeout \033[0m"
     fi
-    #显示光标
     printf "\e[?25h""\n"
+}
+
+function check_hostname_resolution() {
+    echo "检查主机名解析..."
+    if ! getent hosts otter > /dev/null 2>&1; then
+        echo "警告: 无法解析主机名 'otter'，添加到 /etc/hosts"
+        echo "127.0.0.1 otter" >> /etc/hosts
+    fi
+    echo "主机名解析检查完成"
 }
 
 function start_zookeeper() {
     echo "start zookeeper ..."
-    # start zookeeper
-    # Generate the config
+    check_hostname_resolution
+
     rm -f $ZOO_DATA_DIR/myid
     rm -f $ZOO_CONF_DIR/zoo.cfg
     if [[ ! -f "$ZOO_CONF_DIR/zoo.cfg" ]]; then
@@ -135,7 +131,6 @@ function start_zookeeper() {
         {
             echo "dataDir=$ZOO_DATA_DIR" 
             echo "dataLogDir=$ZOO_DATA_LOG_DIR"
-
             echo "tickTime=$ZOO_TICK_TIME"
             echo "initLimit=$ZOO_INIT_LIMIT"
             echo "syncLimit=$ZOO_SYNC_LIMIT"
@@ -152,7 +147,7 @@ function start_zookeeper() {
             echo "4lw.commands.whitelist=*"
         } >> "$CONFIG"
         if [[ -z $ZOO_SERVERS ]]; then
-            ZOO_SERVERS="server.1=localhost:2888:3888"
+            ZOO_SERVERS="server.1=otter:2888:3888"
         fi
 
         for server in $ZOO_SERVERS; do
@@ -168,20 +163,17 @@ function start_zookeeper() {
         done
     fi
 
-    # Write myid only if it doesn't exist
     if [[ ! -f "$ZOO_DATA_DIR/myid" ]]; then
         echo "${ZOO_MY_ID:-1}" > "$ZOO_DATA_DIR/myid"
     fi
     
     cmd="su admin -c 'mkdir -p $ZOO_DATA_DIR;mkdir -p $ZOO_LOG_DIR; cd $ZOO_DATA_DIR; $ZOO_DIR/bin/zkServer.sh start >> $ZOO_DATA_DIR/zookeeper.log 2>&1'"
     eval $cmd
-    #sleep 1
-    #check start
+
     checkStart "zookeeper" "echo stat | nc 127.0.0.1 2181 | grep -c Outstanding" 120
 }
 
 function stop_zookeeper() {
-    # stop zookeeper
     echo "stop zookeeper"
     cmd="su admin -c 'mkdir -p $ZOO_DATA_DIR; cd $ZOO_DATA_DIR; $ZOO_DIR/bin/zkServer.sh stop >> $ZOO_DATA_DIR/zookeeper.log 2>&1'"
     eval $cmd
@@ -190,15 +182,11 @@ function stop_zookeeper() {
 
 function start_manager() {
     echo "start manager ..."
-    # start manager
     su admin -c "cd /home/admin/manager/bin ; sh startup.sh 1>>/tmp/start_manager.log 2>&1"
-    #check start
-    #sleep 1
     checkStart "manager" "nc 127.0.0.1 8080 -w 1 -z | wc -l" 120
 }
 
 function stop_manager() {
-    # stop manager
     echo "stop manager"
     su admin -c 'cd /home/admin/manager/bin; sh stop.sh 1>>/tmp/start_manager.log 2>&1'
     echo "stop manager successful ..."
@@ -206,10 +194,8 @@ function stop_manager() {
 
 function start_node() {
     echo "start node ..."
-    # start node
     cmd="su admin -c 'cd /home/admin/node/bin/ && echo ${ZOO_MY_ID:-1} > /home/admin/node/conf/nid && sh startup.sh ${ZOO_MY_ID:-1}>>/tmp/start_node.log 2>&1'"
     eval $cmd
-    #check start
     checkStart "node" "nc 127.0.0.1 2088 -w 1 -z | wc -l" 120
     node_is_run=$(nc 127.0.0.1 2088 -w 1 -z | wc -l)
     echo "node_is_run:"$node_is_run
@@ -221,15 +207,10 @@ function start_node() {
 }
 
 function stop_node() {
-    # stop node
     echo "stop node"
     su admin -c 'cd /home/admin/node/bin/ && sh stop.sh'
     echo "stop node successful ..."
 }
-
-
-
-
 
 echo "==> START ..."
 start_zookeeper
@@ -256,7 +237,6 @@ echo -e "\033[32m ==> START SUCCESSFUL ... \033[0m"
 
 netstat -tunlp
 tail -f /dev/null &
-# wait TERM signal
 waitterm
 
 echo "==> STOP"
