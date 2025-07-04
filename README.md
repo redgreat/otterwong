@@ -148,50 +148,120 @@ tail -f /home/admin/node/logs/node.log
 ### ZooKeeper启动失败
 
 #### 权限问题
-如果遇到 "Permission denied" 错误：
-```bash
-# 进入容器
-docker exec -it otter bash
-
-# 运行权限修复脚本
-cd /home/admin
-./scripts/fix-permissions.sh
-
-# 重启容器
-docker restart otter
+如果遇到以下权限错误：
 ```
-
-### JVM参数警告问题
-#### Java 8废弃参数警告
-如果看到以下警告信息：
-```
-Java HotSpot(TM) 64-Bit Server VM warning: ignoring option PermSize=96m; support was removed in 8.0
-Java HotSpot(TM) 64-Bit Server VM warning: ignoring option MaxPermSize=256m; support was removed in 8.0
-Java HotSpot(TM) 64-Bit Server VM warning: UseCMSCompactAtFullCollection is deprecated
+/home/admin/zookeeper-3.7.0/bin/../logs/zookeeper-admin-server-otter.out: Permission denied
+FAILED TO START
 ```
 
 **解决方案：**
-1. **自动修复（推荐）**：重新构建镜像，Dockerfile已包含JVM参数优化
+1. **自动修复（推荐）**：重新构建镜像，Dockerfile已包含权限优化
 ```bash
 docker-compose down
 docker-compose build --no-cache
 docker-compose up -d
 ```
 
-2. **手动修复**：使用提供的修复脚本
+2. **手动修复**：使用ZooKeeper权限修复脚本
 ```bash
 # 在容器内执行
-docker exec -it otter bash /home/admin/scripts/fix-jvm-params.sh
+docker exec -it otter bash /home/admin/scripts/fix-zookeeper-permissions.sh
 
-# 或在宿主机执行
-bash scripts/fix-jvm-params.sh
+# 然后重启容器
+docker restart otter
 ```
 
-**优化内容：**
-- 移除Java 8已废弃的PermSize相关参数
-- 替换CMS垃圾收集器为G1GC
-- 优化内存配置，减少资源占用
-- 添加GC暂停时间控制
+3. **临时修复**：手动设置权限
+```bash
+docker exec -it otter bash -c "
+chown -R admin:admin /home/admin/zookeeper-3.7.0/logs
+chmod -R 755 /home/admin/zookeeper-3.7.0/logs
+chown -R admin:admin /home/admin/zkData
+chmod -R 755 /home/admin/zkData
+"
+docker restart otter
+```
+
+### JVM参数警告问题
+#### JVM参数优化问题
+
+在使用Java 8运行Otter时，可能会遇到以下JVM参数警告和内存错误：
+
+```
+Java HotSpot(TM) 64-Bit Server VM warning: ignoring option PermSize=96m; support was removed in 8.0
+Java HotSpot(TM) 64-Bit Server VM warning: ignoring option MaxPermSize=256m; support was removed in 8.0
+Java HotSpot(TM) 64-Bit Server VM warning: UseCMSCompactAtFullCollection is deprecated and will likely be removed in a future release.
+library initialization failed - unable to allocate file descriptor table - out of memory
+```
+
+#### 解决方案
+
+**推荐方案（完全重建）：**
+使用专用脚本重新构建Docker镜像，确保JVM参数修复生效：
+
+```bash
+# 运行完整重建脚本
+./rebuild-with-jvm-fix.sh
+```
+
+**手动重建方案：**
+如果需要手动重建，请按以下步骤操作：
+
+```bash
+# 1. 停止并删除容器
+docker-compose down --remove-orphans
+docker container prune -f
+
+# 2. 删除旧镜像
+docker rmi otterwong_otter:latest || true
+docker images | grep otter | awk '{print $3}' | xargs -r docker rmi || true
+
+# 3. 清理构建缓存
+docker builder prune -a -f
+docker system prune -f
+
+# 4. 重新构建镜像（无缓存）
+docker-compose build --no-cache --pull otter
+
+# 5. 启动服务
+docker-compose up -d
+```
+
+**临时修复方案：**
+如果只需要临时修复现有容器，可以运行：
+
+```bash
+# 运行JVM参数修复脚本
+./fix-jvm-params.sh
+```
+
+#### 优化内容
+
+- **移除废弃参数**：`PermSize`、`MaxPermSize`、`UseCMSCompactAtFullCollection`等
+- **替换垃圾收集器**：从CMS切换到G1GC，提供更好的性能和内存管理
+- **优化内存配置**：调整堆内存大小和新生代比例，避免内存分配错误
+- **添加GC暂停时间控制**：设置`MaxGCPauseMillis=200`提升响应性
+- **分离sed命令**：避免复杂正则表达式导致的sed执行失败
+
+#### 故障排查
+
+如果重建后仍有问题，请检查：
+
+1. **验证容器内文件**：
+   ```bash
+   docker-compose exec otter cat /home/admin/manager/bin/startup.sh | grep JAVA_OPTS
+   ```
+
+2. **检查日志**：
+   ```bash
+   docker-compose logs otter
+   docker-compose exec otter tail -100 /home/admin/manager/logs/manager.log
+   ```
+
+3. **确认镜像版本**：
+   ```bash
+   docker images | grep otter
+   ```
 
 #### 其他问题
 - 检查端口是否被占用：`netstat -tulpn | grep 2181`

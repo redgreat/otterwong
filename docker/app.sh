@@ -160,6 +160,13 @@ function start_zookeeper() {
     
     gosu admin mkdir -p $ZOO_DATA_DIR
     gosu admin mkdir -p $ZOO_LOG_DIR
+    gosu admin mkdir -p $ZOO_DIR/logs
+    chown -R admin:admin $ZOO_DIR/logs
+    chmod -R 755 $ZOO_DIR/logs
+    chown -R admin:admin $ZOO_DATA_DIR
+    chown -R admin:admin $ZOO_LOG_DIR
+    chmod -R 755 $ZOO_DATA_DIR
+    chmod -R 755 $ZOO_LOG_DIR
     cd $ZOO_DATA_DIR
     gosu admin $ZOO_DIR/bin/zkServer.sh start >> $ZOO_DATA_DIR/zookeeper.log 2>&1
 

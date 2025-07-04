@@ -39,8 +39,6 @@ services:
       MANAGER_ADD: otter
       # JVM 内存配置
       JAVA_OPTS: "-Xms512m -Xmx1536m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
-    # extra_hosts:
-      # - "otter:127.0.0.1"
     deploy:
       resources:
         limits:
