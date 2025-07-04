@@ -158,35 +158,41 @@ function start_zookeeper() {
         echo "${ZOO_MY_ID:-1}" > "$ZOO_DATA_DIR/myid"
     fi
     
-    cmd="su admin -c 'mkdir -p $ZOO_DATA_DIR;mkdir -p $ZOO_LOG_DIR; cd $ZOO_DATA_DIR; $ZOO_DIR/bin/zkServer.sh start >> $ZOO_DATA_DIR/zookeeper.log 2>&1'"
-    eval $cmd
+    gosu admin mkdir -p $ZOO_DATA_DIR
+    gosu admin mkdir -p $ZOO_LOG_DIR
+    cd $ZOO_DATA_DIR
+    gosu admin $ZOO_DIR/bin/zkServer.sh start >> $ZOO_DATA_DIR/zookeeper.log 2>&1
 
     checkStart "zookeeper" "echo stat | nc 127.0.0.1 2181 | grep -c Outstanding" 120
 }
 
 function stop_zookeeper() {
     echo "stop zookeeper"
-    cmd="su admin -c 'mkdir -p $ZOO_DATA_DIR; cd $ZOO_DATA_DIR; $ZOO_DIR/bin/zkServer.sh stop >> $ZOO_DATA_DIR/zookeeper.log 2>&1'"
-    eval $cmd
+    gosu admin mkdir -p $ZOO_DATA_DIR
+    cd $ZOO_DATA_DIR
+    gosu admin $ZOO_DIR/bin/zkServer.sh stop >> $ZOO_DATA_DIR/zookeeper.log 2>&1
     echo "stop zookeeper successful ..."
 }
 
 function start_manager() {
     echo "start manager ..."
-    su admin -c "cd /home/admin/manager/bin ; sh startup.sh 1>>/tmp/start_manager.log 2>&1"
+    cd /home/admin/manager/bin
+    gosu admin sh startup.sh 1>>/tmp/start_manager.log 2>&1
     checkStart "manager" "nc 127.0.0.1 8080 -w 1 -z | wc -l" 120
 }
 
 function stop_manager() {
     echo "stop manager"
-    su admin -c 'cd /home/admin/manager/bin; sh stop.sh 1>>/tmp/start_manager.log 2>&1'
+    cd /home/admin/manager/bin
+    gosu admin sh stop.sh 1>>/tmp/start_manager.log 2>&1
     echo "stop manager successful ..."
 }
 
 function start_node() {
     echo "start node ..."
-    cmd="su admin -c 'cd /home/admin/node/bin/ && echo ${ZOO_MY_ID:-1} > /home/admin/node/conf/nid && sh startup.sh ${ZOO_MY_ID:-1}>>/tmp/start_node.log 2>&1'"
-    eval $cmd
+    cd /home/admin/node/bin/
+    gosu admin bash -c "echo ${ZOO_MY_ID:-1} > /home/admin/node/conf/nid"
+    gosu admin sh startup.sh ${ZOO_MY_ID:-1} >>/tmp/start_node.log 2>&1
     checkStart "node" "nc 127.0.0.1 2088 -w 1 -z | wc -l" 120
     node_is_run=$(nc 127.0.0.1 2088 -w 1 -z | wc -l)
     echo "node_is_run:"$node_is_run
@@ -199,7 +205,8 @@ function start_node() {
 
 function stop_node() {
     echo "stop node"
-    su admin -c 'cd /home/admin/node/bin/ && sh stop.sh'
+    cd /home/admin/node/bin/
+    gosu admin sh stop.sh
     echo "stop node successful ..."
 }
 

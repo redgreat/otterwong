@@ -145,6 +145,37 @@ tail -f /home/admin/manager/logs/manager.log
 tail -f /home/admin/node/logs/node.log
 ```
 
+### ZooKeeper启动失败
+
+#### 权限问题
+如果遇到 "Permission denied" 错误：
+```bash
+# 进入容器
+docker exec -it otter bash
+
+# 运行权限修复脚本
+cd /home/admin
+./scripts/fix-permissions.sh
+
+# 重启容器
+docker restart otter
+```
+
+#### 其他问题
+- 检查端口是否被占用：`netstat -tulpn | grep 2181`
+- 查看ZooKeeper日志：`docker exec -it otter tail -f /home/admin/zkData/zookeeper.log`
+- 确保有足够的内存和磁盘空间
+
+### Manager连接失败
+- 检查数据库连接配置是否正确
+- 确认外部MySQL数据库可访问
+- 查看Manager日志：`docker exec -it otter tail -f /home/admin/manager/logs/manager.log`
+
+### Node连接失败
+- 检查Manager地址配置
+- 确认ZooKeeper服务正常运行
+- 查看Node日志：`docker exec -it otter tail -f /home/admin/node/logs/node.log`
+
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！

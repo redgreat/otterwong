@@ -4,6 +4,7 @@ FROM centos:centos7.9.2009 AS base
 ENV DOWNLOAD_LINK="https://repo.huaweicloud.com/java/jdk/8u181-b13/jdk-8u181-linux-x64.tar.gz"
 
 COPY docker/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo
+COPY docker/gosu /usr/local/bin/gosu
 
 # 安装基础系统组件
 RUN \
@@ -27,6 +28,7 @@ RUN \
     mkdir -p /root/.ssh && chown root.root /root && chmod 700 /root/.ssh && \
     yum install -y cronie && \
     sed -i '/session required pam_loginuid.so/d' /etc/pam.d/crond && \
+    chmod +x /usr/local/bin/gosu && \
     true
 
 # 安装Java环境
@@ -83,6 +85,7 @@ RUN \
     mkdir -p /home/admin/manager/logs  && \
     mkdir -p /home/admin/node/logs  && \
     mkdir -p /home/admin/zkData  && \
+    mkdir -p /home/admin/zookeeper-3.7.0/logs && \
     chmod +x /home/admin/*.sh  && \
     chown admin: -R /home/admin && \
     yum clean all && \

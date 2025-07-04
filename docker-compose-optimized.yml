@@ -5,6 +5,8 @@ services:
     restart: unless-stopped
     container_name: otter
     hostname: otter
+    networks:
+      - otter
     ports:
       - "8080:8080"   # Manager Web 界面
       - "8018:8018"   # ZooKeeper Admin
@@ -37,6 +39,8 @@ services:
       MANAGER_ADD: otter
       # JVM 内存配置
       JAVA_OPTS: "-Xms512m -Xmx1536m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+    # extra_hosts:
+      # - "otter:127.0.0.1"
     deploy:
       resources:
         limits:
@@ -66,3 +70,7 @@ volumes:
     driver: local
   otter_node_logs:
     driver: local
+
+networks:
+  otter:
+    driver: bridge
