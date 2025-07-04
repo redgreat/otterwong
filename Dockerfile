@@ -8,7 +8,7 @@ COPY docker/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo
 # 安装基础系统组件
 RUN \
     /bin/cp -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    echo 'root:Lunz2017' | chpasswd && \
+    echo 'root:Otter!123' | chpasswd && \
     groupadd -r admin && useradd -g admin admin && \
     yum install -y man && \
     yum install -y dstat && \
@@ -42,7 +42,7 @@ RUN \
     yum clean all && \
     true
 
-# 第二阶段：安装MySQL和ZooKeeper
+# 第二阶段：安装ZooKeeper
 FROM base AS osbase
 
 COPY ./docker/aria2c /bin/aria2c
@@ -53,29 +53,22 @@ COPY ./docker/node.deployer-4.2.19-SNAPSHOT.tar.gz /tmp/docker/
 
 RUN \
     mkdir -p /tmp/docker && \
-    yum -y remove mysql-server && \
-    yum -y localinstall https://dev.mysql.com/get/mysql57-community-release-el7-11.noarch.rpm && \
-    yum -y install mysql-server --nogpgcheck && \
-    yum -y update  && \
-    (groupadd -r mysql || true) && (useradd -r -g mysql mysql || true) && \
     mkdir -p /home/admin && \
     rm -rf /home/admin/zookeeper-3.4.13 && \
     tar -xzvf /tmp/apache-zookeeper-*-bin.tar.gz -C /home/admin/ && \
     mv /home/admin/apache-zookeeper-3.7.0-bin /home/admin/zookeeper-3.7.0 && \
     rm -f /tmp/apache-zookeeper-*-bin.tar.gz && \
     chown admin: -R /home/admin && \
-    rm -rf /var/lib/mysql/* && \
     yum clean all && \
     true
 
 # 第三阶段：安装Otter应用
 FROM osbase AS otter
 
-EXPOSE 8080 8081 2181 8018 2088 2089 2090 3306
+EXPOSE 8080 8081 2181 8018 2088 2089 2090
 
 # 复制Otter配置文件
 COPY ./docker/app.sh /home/admin/app.sh
-COPY ./docker/my.cnf /etc/my.cnf
 
 # 安装Otter应用
 RUN \
@@ -96,7 +89,7 @@ RUN \
     echo "otter.zookeeper.cluster.default = 127.0.0.1:2181" >> "/home/admin/node/conf/otter.properties" && \
     true
 
-ENV DOCKER_DEPLOY_TYPE=VM PATH=$PATH:/usr/local/mysql/bin:/usr/local/mysql/scripts
+ENV DOCKER_DEPLOY_TYPE=VM
 
 WORKDIR /home/admin
 

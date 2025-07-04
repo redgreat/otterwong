@@ -13,18 +13,19 @@ services:
       - 8018:8018
     volumes:
       - ./config/manager:/home/admin/manager/conf
-      - ./config/node:/home/admin/node/conf 
+      - ./config/node:/home/admin/node/conf
     environment:
       TZ: Asia/Shanghai
       ZOO_CLUSTER: node01:2181,node02:2181,node03:2181
       ZOO_MY_ID: 1
       ZOO_SERVERS: server.1=node01:2888:3888 server.2=node02:2888:3888 server.3=node03:2888:3888
       RUN_MODE: ALL # ALL,MANAGER,NODE
-      MANAGER_ADD:  10.10.20.11
+      MANAGER_ADD: 10.10.20.11
     extra_hosts:
       - "node01:10.10.20.11"
       - "node02:10.10.20.12"      
       - "node03:10.10.20.13"
+      - "mysql-host:10.10.20.100"
     deploy:
       resources:
         limits:
@@ -40,18 +41,19 @@ services:
       otter:
         ipv4_address: 10.10.20.12
     volumes:
-      - ./config/node:/home/admin/node/conf 
+      - ./config/node:/home/admin/node/conf
     environment:
       TZ: Asia/Shanghai
       ZOO_CLUSTER: node01:2181,node02:2181,node03:2181
       ZOO_MY_ID: 2
       ZOO_SERVERS: server.1=node01:2888:3888 server.2=node02:2888:3888 server.3=node03:2888:3888
       RUN_MODE: NODE
-      MANAGER_ADD:  10.10.20.11
+      MANAGER_ADD: 10.10.20.11
     extra_hosts:
       - "node01:10.10.20.11"
       - "node02:10.10.20.12"      
-      - "node03:10.10.20.13" 
+      - "node03:10.10.20.13"
+      - "mysql-host:10.10.20.100"
     depends_on:
       - node01
     deploy:
@@ -69,18 +71,19 @@ services:
       otter:
         ipv4_address: 10.10.20.13
     volumes:
-      - ./config/node:/home/admin/node/conf 
+      - ./config/node:/home/admin/node/conf
     environment:
       TZ: Asia/Shanghai
       ZOO_CLUSTER: node01:2181,node02:2181,node03:2181
       ZOO_MY_ID: 3
       ZOO_SERVERS: server.1=node01:2888:3888 server.2=node02:2888:3888 server.3=node03:2888:3888
       RUN_MODE: NODE
-      MANAGER_ADD:  10.10.20.11
+      MANAGER_ADD: 10.10.20.11
     extra_hosts:
       - "node01:10.10.20.11"
       - "node02:10.10.20.12"      
       - "node03:10.10.20.13"
+      - "mysql-host:10.10.20.100"
     depends_on:
       - node01
     deploy:
@@ -89,6 +92,27 @@ services:
           memory: 2G
           cpus: '1'
 
+  # 可选：如果需要在同一个 docker-compose 中运行 MySQL
+  # mysql:
+  #   image: mysql:5.7
+  #   restart: unless-stopped
+  #   container_name: otter-mysql
+  #   hostname: mysql-host
+  #   networks:
+  #     otter:
+  #       ipv4_address: 10.10.20.100
+  #   ports:
+  #     - 3306:3306
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: root_password
+  #     MYSQL_DATABASE: otter
+  #     MYSQL_USER: otter
+  #     MYSQL_PASSWORD: otter_password
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+  #     - ./sql:/docker-entrypoint-initdb.d
+  #   command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
 networks:
   otter:
     driver: bridge
@@ -96,3 +120,6 @@ networks:
       config:
         - subnet: 10.10.0.0/16
           gateway: 10.10.20.1
+
+# volumes:
+#   mysql_data:

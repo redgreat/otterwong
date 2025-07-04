@@ -11,24 +11,21 @@ services:
     ports:
       - 8080:8080 
       - 8018:8018
-    volumes:
-      - ./config/manager:/home/admin/manager/conf
-      - ./config/node:/home/admin/node/conf 
+      - 33061:3306 
     environment:
       TZ: Asia/Shanghai
       ZOO_CLUSTER: node01:2181,node02:2181,node03:2181
       ZOO_MY_ID: 1
       ZOO_SERVERS: server.1=node01:2888:3888 server.2=node02:2888:3888 server.3=node03:2888:3888
-      RUN_MODE: ALL # ALL,MANAGER,NODE
+      RUN_MODE: MANAGER # ALL,MANAGER,NODE
       MANAGER_ADD:  10.10.20.11
     extra_hosts:
       - "node01:10.10.20.11"
-      - "node02:10.10.20.12"      
-      - "node03:10.10.20.13"
+      - "node02:10.10.20.12"
     deploy:
       resources:
         limits:
-          memory: 2G
+          memory: 4G
           cpus: '1'
 
   node02:
@@ -39,8 +36,8 @@ services:
     networks:
       otter:
         ipv4_address: 10.10.20.12
-    volumes:
-      - ./config/node:/home/admin/node/conf 
+    ports:
+      - 33062:3306 
     environment:
       TZ: Asia/Shanghai
       ZOO_CLUSTER: node01:2181,node02:2181,node03:2181
@@ -50,43 +47,13 @@ services:
       MANAGER_ADD:  10.10.20.11
     extra_hosts:
       - "node01:10.10.20.11"
-      - "node02:10.10.20.12"      
-      - "node03:10.10.20.13" 
+      - "node02:10.10.20.12"
     depends_on:
       - node01
     deploy:
       resources:
         limits:
-          memory: 2G
-          cpus: '1'
-
-  node03:
-    image: registry.cn-hangzhou.aliyuncs.com/redgreat/otter
-    restart: unless-stopped
-    container_name: node03
-    hostname: node03
-    networks:
-      otter:
-        ipv4_address: 10.10.20.13
-    volumes:
-      - ./config/node:/home/admin/node/conf 
-    environment:
-      TZ: Asia/Shanghai
-      ZOO_CLUSTER: node01:2181,node02:2181,node03:2181
-      ZOO_MY_ID: 3
-      ZOO_SERVERS: server.1=node01:2888:3888 server.2=node02:2888:3888 server.3=node03:2888:3888
-      RUN_MODE: NODE
-      MANAGER_ADD:  10.10.20.11
-    extra_hosts:
-      - "node01:10.10.20.11"
-      - "node02:10.10.20.12"      
-      - "node03:10.10.20.13"
-    depends_on:
-      - node01
-    deploy:
-      resources:
-        limits:
-          memory: 2G
+          memory: 4G
           cpus: '1'
 
 networks:

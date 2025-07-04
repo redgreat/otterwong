@@ -1,0 +1,34 @@
+version: "3"
+services:
+  otter:
+    image: registry.cn-hangzhou.aliyuncs.com/redgreat/otter
+    restart: unless-stopped
+    container_name: otter
+    hostname: otter
+    networks:
+      otter:
+        ipv4_address: 10.10.20.11
+    ports:
+      - 8080:8080 
+      - 8018:8018
+      - 33061:3306 
+    volumes:
+      - ./config/manager:/home/admin/manager/conf
+      - ./config/node:/home/admin/node/conf
+    environment:
+      TZ: Asia/Shanghai
+      ZOO_CLUSTER: otter:2181
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=otter:2888:3888
+      RUN_MODE: ALL
+      MANAGER_ADD:  10.10.20.11
+    extra_hosts:
+      - "otter:10.10.20.11"
+
+networks:
+  otter:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.0.0/16
+          gateway: 10.10.20.1
