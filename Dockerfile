@@ -57,7 +57,7 @@ RUN \
     yum -y localinstall https://dev.mysql.com/get/mysql57-community-release-el7-11.noarch.rpm && \
     yum -y install mysql-server --nogpgcheck && \
     yum -y update  && \
-    groupadd -r mysql && useradd -r -g mysql mysql && \
+    (groupadd -r mysql || true) && (useradd -r -g mysql mysql || true) && \
     mkdir -p /home/admin && \
     rm -rf /home/admin/zookeeper-3.4.13 && \
     tar -xzvf /tmp/apache-zookeeper-*-bin.tar.gz -C /home/admin/ && \
