@@ -90,6 +90,14 @@ RUN \
     chown -R admin:admin /home/admin && \
     chmod -R 755 /home/admin/zookeeper-3.7.0/logs && \
     chmod -R 755 /home/admin/zkData && \
+    # 修复ZooKeeper JVM参数兼容Java 8
+    sed -i 's/-XX:PermSize=[0-9]*[mMgG]//g' /home/admin/zookeeper-3.7.0/bin/zkServer.sh && \
+    sed -i 's/-XX:MaxPermSize=[0-9]*[mMgG]//g' /home/admin/zookeeper-3.7.0/bin/zkServer.sh && \
+    sed -i 's/-XX:+UseCMSCompactAtFullCollection//g' /home/admin/zookeeper-3.7.0/bin/zkServer.sh && \
+    sed -i 's/-XX:+CMSParallelRemarkEnabled//g' /home/admin/zookeeper-3.7.0/bin/zkServer.sh && \
+    sed -i 's/-XX:+UseConcMarkSweepGC/-XX:+UseG1GC/g' /home/admin/zookeeper-3.7.0/bin/zkServer.sh && \
+    # 确保ZooKeeper日志目录权限正确
+    chmod -R 777 /home/admin/zookeeper-3.7.0/logs && \
     yum clean all && \
     echo "otter.zookeeper.cluster.default = 127.0.0.1:2181" >> "/home/admin/node/conf/otter.properties" && \
     # 修复Manager JVM参数

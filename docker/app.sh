@@ -115,6 +115,25 @@ function checkStart() {
 function start_zookeeper() {
     echo "start zookeeper ..."
 
+    # 创建必要的目录
+    mkdir -p $ZOO_DATA_DIR $ZOO_LOG_DIR $ZOO_CONF_DIR
+    mkdir -p $ZOO_DIR/logs
+    
+    chown -R admin:admin $ZOO_DIR $ZOO_DATA_DIR $ZOO_LOG_DIR $ZOO_CONF_DIR
+    chmod -R 777 $ZOO_DIR/logs
+    chmod -R 755 $ZOO_DIR $ZOO_DATA_DIR $ZOO_LOG_DIR $ZOO_CONF_DIR
+    
+    chmod +x $ZOO_DIR/bin/zkServer.sh
+    chmod +x $ZOO_DIR/bin/zkEnv.sh
+    
+    rm -f $ZOO_DATA_DIR/zookeeper_server.pid
+    rm -f $ZOO_DIR/logs/zookeeper-admin-server-*.out
+    rm -f $ZOO_DIR/logs/zookeeper-*.out
+
+    touch $ZOO_DIR/logs/zookeeper-admin-server-otter.out
+    chown admin:admin $ZOO_DIR/logs/zookeeper-admin-server-otter.out
+    chmod 666 $ZOO_DIR/logs/zookeeper-admin-server-otter.out
+
     rm -f $ZOO_DATA_DIR/myid
     rm -f $ZOO_CONF_DIR/zoo.cfg
     if [[ ! -f "$ZOO_CONF_DIR/zoo.cfg" ]]; then
@@ -158,17 +177,26 @@ function start_zookeeper() {
         echo "${ZOO_MY_ID:-1}" > "$ZOO_DATA_DIR/myid"
     fi
     
-    gosu admin mkdir -p $ZOO_DATA_DIR
-    gosu admin mkdir -p $ZOO_LOG_DIR
-    gosu admin mkdir -p $ZOO_DIR/logs
-    chown -R admin:admin $ZOO_DIR/logs
-    chmod -R 755 $ZOO_DIR/logs
-    chown -R admin:admin $ZOO_DATA_DIR
-    chown -R admin:admin $ZOO_LOG_DIR
-    chmod -R 755 $ZOO_DATA_DIR
-    chmod -R 755 $ZOO_LOG_DIR
+    # 设置环境变量
+    export JAVA_HOME=/usr/java/latest
+    export PATH=$JAVA_HOME/bin:$PATH
+    
+    # 设置JVM参数 - 移除废弃参数，使用G1GC
+    export JVMFLAGS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$ZOO_LOG_DIR"
+    
+    # 设置ZooKeeper特定的环境变量
+    export ZOO_LOG_DIR=$ZOO_LOG_DIR
+    export ZOO_LOG4J_PROP="INFO,CONSOLE,ROLLINGFILE"
+    
+    # 启动ZooKeeper - 使用更安全的方式
+    echo "Starting ZooKeeper with JVMFLAGS: $JVMFLAGS"
     cd $ZOO_DATA_DIR
-    gosu admin $ZOO_DIR/bin/zkServer.sh start >> $ZOO_DATA_DIR/zookeeper.log 2>&1
+    gosu admin bash -c "cd $ZOO_DIR && JVMFLAGS='$JVMFLAGS' ZOO_LOG_DIR='$ZOO_LOG_DIR' ZOO_LOG4J_PROP='$ZOO_LOG4J_PROP' ./bin/zkServer.sh start" >> $ZOO_DATA_DIR/zookeeper.log 2>&1
+    
+    # 等待启动并检查状态
+    sleep 5
+    echo "Checking ZooKeeper status..."
+    gosu admin $ZOO_DIR/bin/zkServer.sh status || echo "ZooKeeper status check failed, but service may still be starting..."
 
     checkStart "zookeeper" "echo stat | nc 127.0.0.1 2181 | grep -c Outstanding" 120
 }

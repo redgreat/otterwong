@@ -70,6 +70,32 @@ docker-compose up -d
 
 默认用户名/密码：`admin/admin`
 
+### ⚠️ 启动问题快速修复
+
+如果遇到启动问题，请按以下顺序尝试：
+
+1. **运行诊断脚本**
+   ```bash
+   ./scripts/diagnose-startup-issues.sh
+   ```
+
+2. **ZooKeeper启动失败修复**
+   ```bash
+   # 快速修复权限和JVM问题
+   ./scripts/quick-fix-zookeeper.sh
+   ```
+
+3. **完全重建（解决JVM参数问题）**
+   ```bash
+   # 重新构建镜像并应用所有修复
+   ./rebuild-with-jvm-fix.sh
+   ```
+
+4. **查看详细日志**
+   ```bash
+   docker-compose logs otter | grep -E "(ERROR|WARN|Exception|Permission denied|Aborted)"
+   ```
+
 ## 📁 项目结构
 
 ```
@@ -124,63 +150,190 @@ otterwong/
 
 ## 🔍 故障排查
 
-### 查看容器日志
-
+### 快速诊断工具
 ```bash
-# 查看所有容器日志
-docker-compose logs -f
+# 运行综合诊断脚本（推荐）
+./scripts/diagnose-startup-issues.sh
 
-# 查看特定容器日志
-docker-compose logs -f node01
+# 该脚本会自动检查：
+# - Docker服务状态和资源使用
+# - Java环境配置
+# - ZooKeeper/Manager/Node进程状态
+# - 端口监听情况
+# - 日志文件内容
+# - 常见问题（JVM参数、权限、内存、进程异常）
+# - 目录权限设置
+```
+
+### 手动检查步骤
+
+**1. 检查服务状态**
+```bash
+# 查看容器状态
+docker-compose ps
+
+# 查看服务日志
+docker-compose logs otter
+
+# 查看特定错误日志
+docker-compose logs otter | grep -E "(ERROR|WARN|Exception|Permission denied|Aborted)"
+```
+
+**2. 检查JVM参数修复效果**
+```bash
+# 检查Manager启动脚本
+docker-compose exec otter cat /home/admin/manager/bin/startup.sh | grep JAVA_OPTS
+
+# 检查Manager日志中的JVM警告
+docker-compose exec otter tail -100 /home/admin/manager/logs/manager.log | grep -E "(PermSize|MaxPermSize|UseCMSCompactAtFullCollection)"
+
+# 检查内存分配错误
+docker-compose exec otter tail -100 /home/admin/manager/logs/manager.log | grep -E "(out of memory|unable to allocate)"
+```
+
+**3. 检查ZooKeeper状态**
+```bash
+# 检查ZooKeeper进程
+docker-compose exec otter ps aux | grep zookeeper
+
+# 检查ZooKeeper端口
+docker-compose exec otter netstat -tlnp | grep 2181
+
+# 检查ZooKeeper服务状态
+docker-compose exec otter gosu admin /home/admin/zookeeper-3.7.0/bin/zkServer.sh status
+
+# 检查ZooKeeper日志
+docker-compose exec otter tail -50 /home/admin/zkData/zookeeper.log
+```
+
+**4. 检查权限问题**
+```bash
+# 检查ZooKeeper目录权限
+docker-compose exec otter ls -la /home/admin/zookeeper-3.7.0/logs/
+
+# 检查数据目录权限
+docker-compose exec otter ls -la /home/admin/zkData/
+
+# 检查日志文件是否存在
+docker-compose exec otter ls -la /home/admin/zookeeper-3.7.0/logs/zookeeper-admin-server-otter.out
+```
+
+**5. 检查Java环境**
+```bash
+# 检查Java版本
+docker-compose exec otter java -version
+
+# 检查JAVA_HOME
+docker-compose exec otter echo $JAVA_HOME
+
+# 检查Java进程
+docker-compose exec otter ps aux | grep java
 ```
 
 ### 进入容器调试
 
 ```bash
 # 进入容器
-docker exec -it node01 /bin/bash
+docker exec -it otter /bin/bash
 
 # 查看应用日志
 tail -f /home/admin/manager/logs/manager.log
 tail -f /home/admin/node/logs/node.log
 ```
 
-### ZooKeeper启动失败
+### ZooKeeper启动问题
 
 #### 权限问题
-如果遇到以下权限错误：
+
+如果ZooKeeper启动时遇到`Permission denied`错误：
+
 ```
-/home/admin/zookeeper-3.7.0/bin/../logs/zookeeper-admin-server-otter.out: Permission denied
+Starting zookeeper ... /home/admin/zookeeper-3.7.0/bin/zkServer.sh: line 164: /home/admin/zookeeper-3.7.0/bin/../logs/zookeeper-admin-server-otter.out: Permission denied
 FAILED TO START
 ```
 
-**解决方案：**
-1. **自动修复（推荐）**：重新构建镜像，Dockerfile已包含权限优化
+#### JVM兼容性问题
+
+如果ZooKeeper启动时遇到Java进程异常终止：
+
+```
+Starting zookeeper ... /home/admin/zookeeper-3.7.0/bin/zkServer.sh: line 155: 52 Aborted (core dumped) nohup "$JAVA" ...
+FAILED TO START
+```
+
+这通常是由于ZooKeeper的JVM参数与Java 8不兼容导致的。
+
+#### 快速诊断
+
 ```bash
-docker-compose down
-docker-compose build --no-cache
+# 运行诊断脚本
+./scripts/diagnose-startup-issues.sh
+```
+
+#### 解决方案
+
+**推荐方案（完全重建）：**
+使用重建脚本，确保所有修复都生效：
+
+```bash
+# 运行完整重建脚本
+./rebuild-with-jvm-fix.sh
+```
+
+**手动重建方案：**
+重新构建镜像，Dockerfile已包含所有修复：
+
+```bash
+docker-compose down --remove-orphans
+docker rmi otterwong_otter:latest || true
+docker builder prune -a -f
+docker-compose build --no-cache --pull otter
 docker-compose up -d
 ```
 
-2. **手动修复**：使用ZooKeeper权限修复脚本
+**专用修复脚本：**
+运行ZooKeeper专用修复脚本：
+
 ```bash
 # 在容器内执行
-docker exec -it otter bash /home/admin/scripts/fix-zookeeper-permissions.sh
+docker exec -it otter bash /home/admin/scripts/fix-zookeeper-startup.sh
 
-# 然后重启容器
-docker restart otter
+# 或在宿主机执行
+bash scripts/fix-zookeeper-startup.sh
 ```
 
-3. **临时修复**：手动设置权限
+**临时修复方案：**
+手动设置权限和JVM参数：
+
 ```bash
-docker exec -it otter bash -c "
-chown -R admin:admin /home/admin/zookeeper-3.7.0/logs
-chmod -R 755 /home/admin/zookeeper-3.7.0/logs
-chown -R admin:admin /home/admin/zkData
-chmod -R 755 /home/admin/zkData
-"
-docker restart otter
+# 进入容器
+docker exec -it otter bash
+
+# 修复权限
+mkdir -p /home/admin/zookeeper-3.7.0/logs
+touch /home/admin/zookeeper-3.7.0/logs/zookeeper-admin-server-otter.out
+chown -R admin:admin /home/admin/zookeeper-3.7.0
+chmod -R 777 /home/admin/zookeeper-3.7.0/logs
+chmod +x /home/admin/zookeeper-3.7.0/bin/*.sh
+
+# 修复JVM参数
+sed -i 's/-XX:PermSize=[0-9]*[mMgG]//g' /home/admin/zookeeper-3.7.0/bin/zkServer.sh
+sed -i 's/-XX:MaxPermSize=[0-9]*[mMgG]//g' /home/admin/zookeeper-3.7.0/bin/zkServer.sh
+sed -i 's/-XX:+UseCMSCompactAtFullCollection//g' /home/admin/zookeeper-3.7.0/bin/zkServer.sh
+
+# 设置环境变量并重启
+export JVMFLAGS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+gosu admin env JVMFLAGS="$JVMFLAGS" /home/admin/zookeeper-3.7.0/bin/zkServer.sh restart
 ```
+
+#### 修复内容
+
+- **权限修复**：确保ZooKeeper目录和日志文件的正确权限，预创建日志文件
+- **JVM参数优化**：移除Java 8不支持的参数（PermSize、MaxPermSize等）
+- **垃圾收集器更新**：从CMS切换到G1GC，减少内存碎片
+- **内存配置优化**：设置合适的堆内存大小和GC参数
+- **环境变量设置**：确保JAVA_HOME和PATH正确配置
+- **启动脚本优化**：改进ZooKeeper启动流程，增加状态检查
 
 ### JVM参数警告问题
 #### JVM参数优化问题
@@ -285,6 +438,73 @@ docker-compose up -d
 ## 📄 许可证
 
 本项目基于 MIT 许可证开源。
+
+## ❓ 常见问题
+
+### Q: ZooKeeper启动失败 - Permission denied
+**问题**: `Permission denied` 无法创建 `zookeeper-admin-server-otter.out` 文件
+
+**解决方案**:
+```bash
+# 方法1: 使用重建脚本（推荐）
+./rebuild-with-jvm-fix.sh
+
+# 方法2: 手动修复权限
+docker-compose exec otter bash
+mkdir -p /home/admin/zookeeper-3.7.0/logs
+touch /home/admin/zookeeper-3.7.0/logs/zookeeper-admin-server-otter.out
+chmod 777 /home/admin/zookeeper-3.7.0/logs
+chown -R admin:admin /home/admin/zookeeper-3.7.0
+```
+
+### Q: Java进程异常终止 - Aborted (core dumped)
+**问题**: ZooKeeper启动时Java进程异常终止
+
+**原因**: JVM参数与Java 8不兼容（如PermSize、UseCMSCompactAtFullCollection等废弃参数）
+
+**解决方案**:
+```bash
+# 使用修复脚本
+./scripts/fix-zookeeper-startup.sh
+
+# 或手动设置JVM参数
+export JVMFLAGS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+```
+
+### Q: Manager启动时JVM参数警告
+**问题**: 日志中出现 `PermSize`、`MaxPermSize` 等废弃参数警告
+
+**解决方案**:
+```bash
+# 重新构建镜像应用修复
+./rebuild-with-jvm-fix.sh
+```
+
+### Q: 内存分配错误
+**问题**: `unable to allocate file descriptor table - out of memory`
+
+**解决方案**:
+1. 检查Docker容器内存限制
+2. 优化JVM堆内存设置
+3. 使用G1GC减少内存碎片
+
+### Q: 容器启动失败
+**解决方案**: 
+- 检查端口是否被占用
+- 确保Docker服务正常运行
+- 运行诊断脚本: `./scripts/diagnose-startup-issues.sh`
+
+### Q: 数据库连接失败
+**解决方案**: 
+- 检查数据库配置
+- 确保数据库服务已启动
+- 检查网络连接
+
+### Q: 同步任务不工作
+**解决方案**: 
+- 检查ZooKeeper连接状态
+- 确保Manager和Node都正常运行
+- 查看同步任务配置和日志
 
 ## 🔗 相关链接
 
