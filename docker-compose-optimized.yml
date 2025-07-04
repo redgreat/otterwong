@@ -5,9 +5,6 @@ services:
     restart: unless-stopped
     container_name: otter
     hostname: otter
-    networks:
-      otter:
-        ipv4_address: 10.10.20.11
     ports:
       - "8080:8080"   # Manager Web 界面
       - "8018:8018"   # ZooKeeper Admin
@@ -37,11 +34,9 @@ services:
       ZOO_AUTOPURGE_SNAPRETAINCOUNT: 3
       # Otter 配置
       RUN_MODE: ALL
-      MANAGER_ADD: 10.10.20.11
+      MANAGER_ADD: otter
       # JVM 内存配置
       JAVA_OPTS: "-Xms512m -Xmx1536m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
-    extra_hosts:
-      - "otter:10.10.20.11"
     deploy:
       resources:
         limits:
@@ -71,14 +66,3 @@ volumes:
     driver: local
   otter_node_logs:
     driver: local
-
-networks:
-  otter:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 10.10.0.0/16
-          gateway: 10.10.20.1
-    driver_opts:
-      com.docker.network.bridge.name: br-otter
-      com.docker.network.driver.mtu: 1500

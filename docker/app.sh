@@ -31,6 +31,7 @@ ZOO_AUTOPURGE_SNAPRETAINCOUNT=3
 ZOO_MAX_CLIENT_CNXNS=60 
 ZOO_STANDALONE_ENABLED=true 
 ZOO_ADMINSERVER_ENABLED=true
+
 function get_host_ip()
 {
     IP=`host $1 | grep -Eo "[0-9]+.[0-9]+.[0-9]+.[0-9]+"`
@@ -111,18 +112,8 @@ function checkStart() {
     printf "\e[?25h""\n"
 }
 
-function check_hostname_resolution() {
-    echo "检查主机名解析..."
-    if ! getent hosts otter > /dev/null 2>&1; then
-        echo "警告: 无法解析主机名 'otter'，添加到 /etc/hosts"
-        echo "127.0.0.1 otter" >> /etc/hosts
-    fi
-    echo "主机名解析检查完成"
-}
-
 function start_zookeeper() {
     echo "start zookeeper ..."
-    check_hostname_resolution
 
     rm -f $ZOO_DATA_DIR/myid
     rm -f $ZOO_CONF_DIR/zoo.cfg
