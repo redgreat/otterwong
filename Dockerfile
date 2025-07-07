@@ -2,11 +2,8 @@ FROM canal/otter-osbase:v1 AS base
 
 COPY ./docker/aria2c /bin/aria2c
 COPY ./docker/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo
-COPY ./docker/zookeeper-3.4.6.tar.gz /tmp/
 RUN yum -y update  && \
     mkdir -p /home/admin && \
-    tar -xzvf /tmp/zookeeper-3.4.6.tar.gz -C /home/admin/ && \
-    rm -f /tmp/zookeeper-3.4.6.tar.gz && \
     chown admin: -R /home/admin && \ 
     yum clean all && \
     true

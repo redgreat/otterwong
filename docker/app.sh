@@ -27,7 +27,7 @@ if [ -z "${MYSQL_DATABASE}" ]; then
 fi
 
 # default zookeeper config
-ZOO_DIR=/home/admin/zookeeper-3.4.6
+ZOO_DIR=/home/admin/zookeeper-3.4.13
 ZOO_CONF_DIR=$ZOO_DIR/conf
 ZOO_DATA_DIR=/home/admin/zkData 
 ZOO_DATA_LOG_DIR=$ZOO_DATA_DIR/datalog 
