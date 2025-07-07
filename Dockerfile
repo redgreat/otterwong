@@ -36,14 +36,18 @@ RUN \
     /bin/rm -f /tmp/docker/manager.deployer-*.tar.gz && \
     mkdir -p /home/admin/manager/logs /home/admin/manager/conf /home/admin/manager/bin && \
     mkdir -p /home/admin/node/logs /home/admin/node/conf /home/admin/node/bin && \
-    mkdir -p /home/admin/zkData /home/admin/zookeeper-3.7.0/logs /home/admin/zookeeper-3.7.0/conf && \
+    mkdir -p /home/admin/zkData /home/admin/zkData/datalog && \
+    mkdir -p /home/admin/zookeeper-3.7.0/logs /home/admin/zookeeper-3.7.0/conf && \
     chmod +x /home/admin/*.sh  && \
     chmod +x /home/admin/bin/*.sh  && \
     chmod +x /home/admin/zookeeper-3.7.0/bin/*.sh && \
     chmod -R 755 /home/admin/manager /home/admin/node /home/admin/zkData /home/admin/zookeeper-3.7.0 && \
     chown -R admin:admin /home/admin && \
     touch /home/admin/zkData/zookeeper.log /home/admin/manager/logs/manager.log /home/admin/node/logs/node.log && \
-    chown admin:admin /home/admin/zkData/zookeeper.log /home/admin/manager/logs/manager.log /home/admin/node/logs/node.log && \ 
+    touch /home/admin/zookeeper-3.7.0/logs/zookeeper-admin-server-otter.out && \
+    touch /home/admin/zookeeper-3.7.0/logs/zookeeper.out && \
+    chown -R admin:admin /home/admin/zkData /home/admin/manager/logs /home/admin/node/logs /home/admin/zookeeper-3.7.0/logs && \
+    chmod -R 755 /home/admin/zookeeper-3.7.0/logs && \ 
     yum clean all && \    
     echo "otter.zookeeper.cluster.default = 127.0.0.1:2181" >> "/home/admin/node/conf/otter.properties" && \
     true
