@@ -2,8 +2,13 @@ FROM canal/otter-osbase:v1 AS base
 
 COPY ./docker/aria2c /bin/aria2c
 COPY ./docker/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo
+COPY ./docker/apache-zookeeper-3.7.0-bin.tar.gz /tmp/
 RUN yum -y update  && \
-    mkdir -p /home/admin && \
+    mkdir -p /home/admin && \    
+    rm -rf /home/admin/zookeeper-3.4.13 && \
+    tar -xzvf /tmp/apache-zookeeper-*-bin.tar.gz -C /home/admin/ && \
+    mv /home/admin/apache-zookeeper-3.7.0-bin /home/admin/zookeeper-3.7.0 && \
+    rm -f /tmp/apache-zookeeper-*-bin.tar.gz && \
     chown admin: -R /home/admin && \ 
     yum clean all && \
     true

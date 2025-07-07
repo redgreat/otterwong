@@ -19,8 +19,18 @@ services:
       OTTER_MANAGER_MYSQL: "fn.wongcw.cn:3306"
       MYSQL_USER: "otter"
       MYSQL_PASSWORD: "Lunz2017"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 64M
     logging:
       driver: "json-file"
       options:
         max-size: "100m"
         max-file: "3"
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
