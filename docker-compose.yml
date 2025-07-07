@@ -21,6 +21,10 @@ services:
       ZOO_SERVERS: server.1=node01:2888:3888 server.2=node02:2888:3888 server.3=node03:2888:3888
       RUN_MODE: ALL # ALL,MANAGER,NODE
       MANAGER_ADD:  10.10.20.11
+      # 外部MySQL配置
+      OTTER_MANAGER_MYSQL: "your-mysql-host:3306"
+      MYSQL_USER: "otter"
+      MYSQL_USER_PASSWORD: "your-password"
     extra_hosts:
       - "node01:10.10.20.11"
       - "node02:10.10.20.12"      

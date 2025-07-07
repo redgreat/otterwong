@@ -37,8 +37,10 @@ services:
       # Otter 配置
       RUN_MODE: ALL
       MANAGER_ADD: otter
-      # JVM 内存配置
-      JAVA_OPTS: "-Xms512m -Xmx1536m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+      # 外部MySQL配置
+      OTTER_MANAGER_MYSQL: "fn.wongcw.cn:3306"
+      MYSQL_USER: "otter"
+      MYSQL_USER_PASSWORD: "Lunz2017"
     deploy:
       resources:
         limits:

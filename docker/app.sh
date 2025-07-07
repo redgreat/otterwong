@@ -18,31 +18,31 @@ if [ -z "${MANAGER_ADD}" ]; then
     RUN_MODE="10.21.0.10"
 fi
 
+# default zookeeper config
 ZOO_DIR=/home/admin/zookeeper-3.7.0
 ZOO_CONF_DIR=$ZOO_DIR/conf
 ZOO_DATA_DIR=/home/admin/zkData 
 ZOO_DATA_LOG_DIR=$ZOO_DATA_DIR/datalog 
 ZOO_LOG_DIR=$ZOO_DIR/logs 
-ZOO_TICK_TIME=10000 
-ZOO_INIT_LIMIT=10 
-ZOO_SYNC_LIMIT=5
-ZOO_AUTOPURGE_PURGEINTERVAL=0 
-ZOO_AUTOPURGE_SNAPRETAINCOUNT=3 
-ZOO_MAX_CLIENT_CNXNS=60 
-ZOO_STANDALONE_ENABLED=true 
-ZOO_ADMINSERVER_ENABLED=true
+ZOO_TICK_TIME=${ZOO_TICK_TIME:-10000}
+ZOO_INIT_LIMIT=${ZOO_INIT_LIMIT:-10}
+ZOO_SYNC_LIMIT=${ZOO_SYNC_LIMIT:-5}
+ZOO_AUTOPURGE_PURGEINTERVAL=${ZOO_AUTOPURGE_PURGEINTERVAL:-0}
+ZOO_AUTOPURGE_SNAPRETAINCOUNT=${ZOO_AUTOPURGE_SNAPRETAINCOUNT:-3}
+ZOO_MAX_CLIENT_CNXNS=${ZOO_MAX_CLIENT_CNXNS:-60}
+ZOO_STANDALONE_ENABLED=${ZOO_STANDALONE_ENABLED:-true}
+ZOO_ADMINSERVER_ENABLED=${ZOO_ADMINSERVER_ENABLED:-true}
 
+# 获取主机IP地址
 function get_host_ip()
 {
     IP=`host $1 | grep -Eo "[0-9]+.[0-9]+.[0-9]+.[0-9]+"`
     echo "$IP"
 }
-# waitterm
-#   wait TERM/INT signal.
-#   see: http://veithen.github.io/2014/11/16/sigterm-propagation.html
+
+# 等待TERM/INT信号
 waitterm() {
         local PID
-        # any process to block
         tail -f /dev/null &
         PID="$!"
         trap "kill -TERM ${PID}" TERM INT
@@ -51,10 +51,7 @@ waitterm() {
         wait "${PID}" 2>/dev/null || true
 }
 
-# waittermpid "${PIDFILE}".
-#   monitor process by pidfile && wait TERM/INT signal.
-#   if the process disappeared, return 1, means exit with ERROR.
-#   if TERM or INT signal received, return 0, means OK to exit.
+# 通过pidfile监控进程并等待TERM/INT信号
 waittermpid() {
         local PIDFILE PID do_run error
         PIDFILE="${1?}"
@@ -74,6 +71,7 @@ waittermpid() {
         return "${error}"
 }
 
+# 检查服务启动状态
 function checkStart() {
     local name=$1
     local cmd=$2
@@ -112,28 +110,9 @@ function checkStart() {
     printf "\e[?25h""\n"
 }
 
+# 启动zookeeper服务
 function start_zookeeper() {
     echo "start zookeeper ..."
-
-    # 创建必要的目录
-    mkdir -p $ZOO_DATA_DIR $ZOO_LOG_DIR $ZOO_CONF_DIR
-    mkdir -p $ZOO_DIR/logs
-    
-    chown -R admin:admin $ZOO_DIR $ZOO_DATA_DIR $ZOO_LOG_DIR $ZOO_CONF_DIR
-    chmod -R 777 $ZOO_DIR/logs
-    chmod -R 755 $ZOO_DIR $ZOO_DATA_DIR $ZOO_LOG_DIR $ZOO_CONF_DIR
-    
-    chmod +x $ZOO_DIR/bin/zkServer.sh
-    chmod +x $ZOO_DIR/bin/zkEnv.sh
-    
-    rm -f $ZOO_DATA_DIR/zookeeper_server.pid
-    rm -f $ZOO_DIR/logs/zookeeper-admin-server-*.out
-    rm -f $ZOO_DIR/logs/zookeeper-*.out
-
-    touch $ZOO_DIR/logs/zookeeper-admin-server-otter.out
-    chown admin:admin $ZOO_DIR/logs/zookeeper-admin-server-otter.out
-    chmod 666 $ZOO_DIR/logs/zookeeper-admin-server-otter.out
-
     rm -f $ZOO_DATA_DIR/myid
     rm -f $ZOO_CONF_DIR/zoo.cfg
     if [[ ! -f "$ZOO_CONF_DIR/zoo.cfg" ]]; then
@@ -141,6 +120,7 @@ function start_zookeeper() {
         {
             echo "dataDir=$ZOO_DATA_DIR" 
             echo "dataLogDir=$ZOO_DATA_LOG_DIR"
+
             echo "tickTime=$ZOO_TICK_TIME"
             echo "initLimit=$ZOO_INIT_LIMIT"
             echo "syncLimit=$ZOO_SYNC_LIMIT"
@@ -157,7 +137,7 @@ function start_zookeeper() {
             echo "4lw.commands.whitelist=*"
         } >> "$CONFIG"
         if [[ -z $ZOO_SERVERS ]]; then
-            ZOO_SERVERS="server.1=otter:2888:3888"
+            ZOO_SERVERS="server.1=localhost:2888:3888"
         fi
 
         for server in $ZOO_SERVERS; do
@@ -177,57 +157,61 @@ function start_zookeeper() {
         echo "${ZOO_MY_ID:-1}" > "$ZOO_DATA_DIR/myid"
     fi
     
-    # 设置环境变量
-    export JAVA_HOME=/usr/java/latest
-    export PATH=$JAVA_HOME/bin:$PATH
-    
-    # 设置JVM参数 - 移除废弃参数，使用G1GC
-    export JVMFLAGS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$ZOO_LOG_DIR"
-    
-    # 设置ZooKeeper特定的环境变量
-    export ZOO_LOG_DIR=$ZOO_LOG_DIR
-    export ZOO_LOG4J_PROP="INFO,CONSOLE,ROLLINGFILE"
-    
-    # 启动ZooKeeper - 使用更安全的方式
-    echo "Starting ZooKeeper with JVMFLAGS: $JVMFLAGS"
-    cd $ZOO_DATA_DIR
-    gosu admin bash -c "cd $ZOO_DIR && JVMFLAGS='$JVMFLAGS' ZOO_LOG_DIR='$ZOO_LOG_DIR' ZOO_LOG4J_PROP='$ZOO_LOG4J_PROP' ./bin/zkServer.sh start" >> $ZOO_DATA_DIR/zookeeper.log 2>&1
-    
-    # 等待启动并检查状态
-    sleep 5
-    echo "Checking ZooKeeper status..."
-    gosu admin $ZOO_DIR/bin/zkServer.sh status || echo "ZooKeeper status check failed, but service may still be starting..."
-
+    cmd="su admin -c 'mkdir -p $ZOO_DATA_DIR;mkdir -p $ZOO_LOG_DIR; cd $ZOO_DATA_DIR; $ZOO_DIR/bin/zkServer.sh start >> $ZOO_DATA_DIR/zookeeper.log 2>&1'"
+    eval $cmd
     checkStart "zookeeper" "echo stat | nc 127.0.0.1 2181 | grep -c Outstanding" 120
 }
 
+# 停止zookeeper服务
 function stop_zookeeper() {
     echo "stop zookeeper"
-    gosu admin mkdir -p $ZOO_DATA_DIR
-    cd $ZOO_DATA_DIR
-    gosu admin $ZOO_DIR/bin/zkServer.sh stop >> $ZOO_DATA_DIR/zookeeper.log 2>&1
+    cmd="su admin -c 'mkdir -p $ZOO_DATA_DIR; cd $ZOO_DATA_DIR; $ZOO_DIR/bin/zkServer.sh stop >> $ZOO_DATA_DIR/zookeeper.log 2>&1'"
+    eval $cmd
     echo "stop zookeeper successful ..."
 }
 
+# 启动manager服务
 function start_manager() {
     echo "start manager ..."
-    cd /home/admin/manager/bin
-    gosu admin sh startup.sh 1>>/tmp/start_manager.log 2>&1
+
+    if [ -n "${OTTER_MANAGER_MYSQL}" ] ; then
+        cmd="sed -i -e 's/^otter.database.driver.url.*$/otter.database.driver.url = jdbc:mysql:\/\/${OTTER_MANAGER_MYSQL}\/otter/' /home/admin/manager/conf/otter.properties"
+        eval $cmd
+        cmd="sed -i -e 's/^otter.database.driver.username.*$/otter.database.driver.username = ${MYSQL_USER}/' /home/admin/manager/conf/otter.properties"
+        eval $cmd
+        cmd="sed -i -e 's/^otter.database.driver.password.*$/otter.database.driver.password = ${MYSQL_USER_PASSWORD}/' /home/admin/manager/conf/otter.properties"
+        eval $cmd
+        cmd="sed -i -e 's/^otter.communication.manager.port.*$/otter.communication.manager.port = 8081/' /home/admin/manager/conf/otter.properties"
+        eval $cmd
+        cmd="sed -i -e 's/^otter.domainName.*$/otter.domainName = localhost/' /home/admin/manager/conf/otter.properties"
+        eval $cmd
+        cmd="sed -i -e 's/^otter.zookeeper.cluster.default.*$/otter.zookeeper.cluster.default = ${ZOO_CLUSTER}/' /home/admin/manager/conf/otter.properties"
+        eval $cmd
+    fi
+    su admin -c "cd /home/admin/manager/bin ; sh startup.sh 1>>/tmp/start_manager.log 2>&1"
+
     checkStart "manager" "nc 127.0.0.1 8080 -w 1 -z | wc -l" 120
 }
 
+# 停止manager服务
 function stop_manager() {
+    # stop manager
     echo "stop manager"
-    cd /home/admin/manager/bin
-    gosu admin sh stop.sh 1>>/tmp/start_manager.log 2>&1
+    su admin -c 'cd /home/admin/manager/bin; sh stop.sh 1>>/tmp/start_manager.log 2>&1'
     echo "stop manager successful ..."
 }
 
+# 启动node服务
 function start_node() {
     echo "start node ..."
-    cd /home/admin/node/bin/
-    gosu admin bash -c "echo ${ZOO_MY_ID:-1} > /home/admin/node/conf/nid"
-    gosu admin sh startup.sh ${ZOO_MY_ID:-1} >>/tmp/start_node.log 2>&1
+    
+    cmd="sed -i -e 's/^otter.manager.address.*$/otter.manager.address = ${MANAGER_ADD}:8081/' /home/admin/node/conf/otter.properties"
+    eval $cmd
+    cmd="sed -i -e 's/^otter.zookeeper.cluster.default.*$/otter.zookeeper.cluster.default = ${ZOO_CLUSTER}/' /home/admin/node/conf/otter.properties"
+    eval $cmd    
+    cmd="su admin -c 'cd /home/admin/node/bin/ && echo ${ZOO_MY_ID:-1} > /home/admin/node/conf/nid && sh startup.sh ${ZOO_MY_ID:-1}>>/tmp/start_node.log 2>&1'"
+    eval $cmd
+
     checkStart "node" "nc 127.0.0.1 2088 -w 1 -z | wc -l" 120
     node_is_run=$(nc 127.0.0.1 2088 -w 1 -z | wc -l)
     echo "node_is_run:"$node_is_run
@@ -238,10 +222,10 @@ function start_node() {
     fi
 }
 
+# 停止node服务
 function stop_node() {
     echo "stop node"
-    cd /home/admin/node/bin/
-    gosu admin sh stop.sh
+    su admin -c 'cd /home/admin/node/bin/ && sh stop.sh'
     echo "stop node successful ..."
 }
 

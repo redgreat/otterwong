@@ -16,6 +16,13 @@
 - Docker Compose 2.0+
 - 外部 MySQL 5.7+ 数据库
 
+⚠️ **重要提示**: 本镜像使用JDK 6 (jdk1.6.0_45)，请注意以下兼容性问题：
+- JDK 6已于2013年停止公开更新，存在安全风险
+- 不支持G1垃圾收集器，已配置使用CMS垃圾收集器
+- 某些现代Java库可能不兼容JDK 6
+- 建议在生产环境中使用JDK 8或更高版本
+- 如需使用更高版本的JDK，请修改Dockerfile中的DOWNLOAD_LINK
+
 ## 🛠️ 快速开始
 
 ### 1. 克隆项目
@@ -74,24 +81,30 @@ docker-compose up -d
 
 如果遇到启动问题，请按以下顺序尝试：
 
-1. **运行诊断脚本**
+1. **JDK 6兼容性检查**（推荐首先运行）
+   ```bash
+   chmod +x scripts/jdk6-compatibility-check.sh
+   ./scripts/jdk6-compatibility-check.sh
+   ```
+
+2. **运行诊断脚本**
    ```bash
    ./scripts/diagnose-startup-issues.sh
    ```
 
-2. **ZooKeeper启动失败修复**
+3. **ZooKeeper启动失败修复**
    ```bash
    # 快速修复权限和JVM问题
    ./scripts/quick-fix-zookeeper.sh
    ```
 
-3. **完全重建（解决JVM参数问题）**
+4. **完全重建（解决JVM参数问题）**
    ```bash
    # 重新构建镜像并应用所有修复
    ./rebuild-with-jvm-fix.sh
    ```
 
-4. **查看详细日志**
+5. **查看详细日志**
    ```bash
    docker-compose logs otter | grep -E "(ERROR|WARN|Exception|Permission denied|Aborted)"
    ```
@@ -440,6 +453,24 @@ docker-compose up -d
 本项目基于 MIT 许可证开源。
 
 ## ❓ 常见问题
+
+### Q: JDK 6兼容性问题
+**问题**: 应用程序使用了JDK 6不支持的特性或参数
+
+**解决方案**:
+```bash
+# 运行兼容性检查
+./scripts/jdk6-compatibility-check.sh
+
+# 常见不兼容参数替换：
+# -XX:+UseG1GC → -XX:+UseConcMarkSweepGC
+# -XX:MaxGCPauseMillis=200 → -XX:+CMSParallelRemarkEnabled
+```
+
+**注意事项**:
+- JDK 6不支持G1垃圾收集器，已配置使用CMS
+- 某些现代Java库可能需要JDK 7+
+- 建议升级到JDK 8或更高版本以获得更好的安全性和性能
 
 ### Q: ZooKeeper启动失败 - Permission denied
 **问题**: `Permission denied` 无法创建 `zookeeper-admin-server-otter.out` 文件
