@@ -17,7 +17,7 @@ FROM base AS otter
 
 EXPOSE 8080 8081 2181 8018 2088 2089 2090
 
-COPY ./image/ /tmp/docker/
+COPY ./docker/image/ /tmp/docker/
 COPY ./docker/app.sh /home/admin/app.sh
 
 RUN \
