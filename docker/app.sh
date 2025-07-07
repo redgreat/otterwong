@@ -13,9 +13,17 @@ host=`hostname -i`
 if [ -z "${RUN_MODE}" ]; then
     RUN_MODE="ALL"
 fi
-
-if [ -z "${MANAGER_ADD}" ]; then
-    RUN_MODE="10.21.0.10"
+if [ -z "${OTTER_MANAGER_MYSQL}" ]; then
+    OTTER_MANAGER_MYSQL="fn.wongcw.cn:3306"
+fi
+if [ -z "${MYSQL_USER}" ]; then
+    MYSQL_USER="otter"
+fi
+if [ -z "${MYSQL_PASSWORD}" ]; then
+    MYSQL_PASSWORD="Lunz2017"
+fi
+if [ -z "${MYSQL_DATABASE}" ]; then
+    MYSQL_DATABASE="otter"
 fi
 
 # default zookeeper config
@@ -24,16 +32,14 @@ ZOO_CONF_DIR=$ZOO_DIR/conf
 ZOO_DATA_DIR=/home/admin/zkData 
 ZOO_DATA_LOG_DIR=$ZOO_DATA_DIR/datalog 
 ZOO_LOG_DIR=$ZOO_DIR/logs 
-ZOO_TICK_TIME=${ZOO_TICK_TIME:-10000}
-ZOO_INIT_LIMIT=${ZOO_INIT_LIMIT:-10}
-ZOO_SYNC_LIMIT=${ZOO_SYNC_LIMIT:-5}
-ZOO_AUTOPURGE_PURGEINTERVAL=${ZOO_AUTOPURGE_PURGEINTERVAL:-0}
-ZOO_AUTOPURGE_SNAPRETAINCOUNT=${ZOO_AUTOPURGE_SNAPRETAINCOUNT:-3}
-ZOO_MAX_CLIENT_CNXNS=${ZOO_MAX_CLIENT_CNXNS:-60}
-ZOO_STANDALONE_ENABLED=${ZOO_STANDALONE_ENABLED:-true}
-ZOO_ADMINSERVER_ENABLED=${ZOO_ADMINSERVER_ENABLED:-true}
-
-# 获取主机IP地址
+ZOO_TICK_TIME=10000 
+ZOO_INIT_LIMIT=10 
+ZOO_SYNC_LIMIT=5
+ZOO_AUTOPURGE_PURGEINTERVAL=0 
+ZOO_AUTOPURGE_SNAPRETAINCOUNT=3 
+ZOO_MAX_CLIENT_CNXNS=60 
+ZOO_STANDALONE_ENABLED=true 
+ZOO_ADMINSERVER_ENABLED=true
 function get_host_ip()
 {
     IP=`host $1 | grep -Eo "[0-9]+.[0-9]+.[0-9]+.[0-9]+"`
@@ -114,8 +120,6 @@ function checkStart() {
 function start_zookeeper() {
     echo "start zookeeper ..."
     
-
-    
     rm -f $ZOO_DATA_DIR/myid
     rm -f $ZOO_CONF_DIR/zoo.cfg
     if [[ ! -f "$ZOO_CONF_DIR/zoo.cfg" ]]; then
@@ -123,7 +127,6 @@ function start_zookeeper() {
         {
             echo "dataDir=$ZOO_DATA_DIR" 
             echo "dataLogDir=$ZOO_DATA_LOG_DIR"
-
             echo "tickTime=$ZOO_TICK_TIME"
             echo "initLimit=$ZOO_INIT_LIMIT"
             echo "syncLimit=$ZOO_SYNC_LIMIT"
@@ -158,10 +161,9 @@ function start_zookeeper() {
 
     if [[ ! -f "$ZOO_DATA_DIR/myid" ]]; then
         echo "${ZOO_MY_ID:-1}" > "$ZOO_DATA_DIR/myid"
-        chown admin:admin "$ZOO_DATA_DIR/myid"
     fi
     
-    cmd="su - admin -c 'cd $ZOO_DATA_DIR; $ZOO_DIR/bin/zkServer.sh start >> $ZOO_DATA_DIR/zookeeper.log 2>&1'"
+    cmd="su admin -c 'mkdir -p $ZOO_DATA_DIR;mkdir -p $ZOO_LOG_DIR; cd $ZOO_DATA_DIR; $ZOO_DIR/bin/zkServer.sh start >> $ZOO_DATA_DIR/zookeeper.log 2>&1'"
     eval $cmd
     checkStart "zookeeper" "echo stat | nc 127.0.0.1 2181 | grep -c Outstanding" 120
 }
@@ -169,7 +171,7 @@ function start_zookeeper() {
 # 停止zookeeper服务
 function stop_zookeeper() {
     echo "stop zookeeper"
-    cmd="su - admin -c 'mkdir -p $ZOO_DATA_DIR; cd $ZOO_DATA_DIR; $ZOO_DIR/bin/zkServer.sh stop >> $ZOO_DATA_DIR/zookeeper.log 2>&1'"
+    cmd="su admin -c 'mkdir -p $ZOO_DATA_DIR; cd $ZOO_DATA_DIR; $ZOO_DIR/bin/zkServer.sh stop >> $ZOO_DATA_DIR/zookeeper.log 2>&1'"
     eval $cmd
     echo "stop zookeeper successful ..."
 }
@@ -185,7 +187,7 @@ function start_manager() {
         eval $cmd
         cmd="sed -i -e 's/^otter.database.driver.username.*$/otter.database.driver.username = ${MYSQL_USER}/' /home/admin/manager/conf/otter.properties"
         eval $cmd
-        cmd="sed -i -e 's/^otter.database.driver.password.*$/otter.database.driver.password = ${MYSQL_USER_PASSWORD}/' /home/admin/manager/conf/otter.properties"
+        cmd="sed -i -e 's/^otter.database.driver.password.*$/otter.database.driver.password = ${MYSQL_PASSWORD}/' /home/admin/manager/conf/otter.properties"
         eval $cmd
         cmd="sed -i -e 's/^otter.communication.manager.port.*$/otter.communication.manager.port = 8081/' /home/admin/manager/conf/otter.properties"
         eval $cmd
@@ -203,15 +205,13 @@ function start_manager() {
 function stop_manager() {
     # stop manager
     echo "stop manager"
-    su - admin -c 'cd /home/admin/manager/bin; sh stop.sh 1>>/tmp/start_manager.log 2>&1'
+    su admin -c 'cd /home/admin/manager/bin; sh stop.sh 1>>/tmp/start_manager.log 2>&1'
     echo "stop manager successful ..."
 }
 
 # 启动node服务
 function start_node() {
     echo "start node ..."
-    
-
     
     cmd="sed -i -e 's/^otter.manager.address.*$/otter.manager.address = ${MANAGER_ADD}:8081/' /home/admin/node/conf/otter.properties"
     eval $cmd
