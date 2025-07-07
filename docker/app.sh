@@ -27,7 +27,7 @@ if [ -z "${MYSQL_DATABASE}" ]; then
 fi
 
 # default zookeeper config
-ZOO_DIR=/home/admin/zookeeper-3.7.0
+ZOO_DIR=/home/admin/zookeeper-3.4.6
 ZOO_CONF_DIR=$ZOO_DIR/conf
 ZOO_DATA_DIR=/home/admin/zkData 
 ZOO_DATA_LOG_DIR=$ZOO_DATA_DIR/datalog 
@@ -40,11 +40,6 @@ ZOO_AUTOPURGE_SNAPRETAINCOUNT=3
 ZOO_MAX_CLIENT_CNXNS=60 
 ZOO_STANDALONE_ENABLED=true 
 ZOO_ADMINSERVER_ENABLED=true
-function get_host_ip()
-{
-    IP=`host $1 | grep -Eo "[0-9]+.[0-9]+.[0-9]+.[0-9]+"`
-    echo "$IP"
-}
 
 # 等待TERM/INT信号
 waitterm() {
@@ -55,26 +50,6 @@ waitterm() {
         wait "${PID}" || true
         trap - TERM INT
         wait "${PID}" 2>/dev/null || true
-}
-
-# 通过pidfile监控进程并等待TERM/INT信号
-waittermpid() {
-        local PIDFILE PID do_run error
-        PIDFILE="${1?}"
-        do_run=true
-        error=0
-        trap "do_run=false" TERM INT
-        while "${do_run}" ; do
-                PID="$(cat "${PIDFILE}")"
-                if ! ps -p "${PID}" >/dev/null 2>&1 ; then
-                        do_run=false
-                        error=1
-                else
-                        sleep 1
-                fi
-        done
-        trap - TERM INT
-        return "${error}"
 }
 
 # 检查服务启动状态
