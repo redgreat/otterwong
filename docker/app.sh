@@ -161,7 +161,7 @@ function start_zookeeper() {
         chown admin:admin "$ZOO_DATA_DIR/myid"
     fi
     
-    cmd="gosu admin bash -c 'cd $ZOO_DATA_DIR; $ZOO_DIR/bin/zkServer.sh start >> $ZOO_DATA_DIR/zookeeper.log 2>&1'"
+    cmd="su - admin -c 'cd $ZOO_DATA_DIR; $ZOO_DIR/bin/zkServer.sh start >> $ZOO_DATA_DIR/zookeeper.log 2>&1'"
     eval $cmd
     checkStart "zookeeper" "echo stat | nc 127.0.0.1 2181 | grep -c Outstanding" 120
 }
@@ -169,7 +169,7 @@ function start_zookeeper() {
 # 停止zookeeper服务
 function stop_zookeeper() {
     echo "stop zookeeper"
-    cmd="gosu admin bash -c 'mkdir -p $ZOO_DATA_DIR; cd $ZOO_DATA_DIR; $ZOO_DIR/bin/zkServer.sh stop >> $ZOO_DATA_DIR/zookeeper.log 2>&1'"
+    cmd="su - admin -c 'mkdir -p $ZOO_DATA_DIR; cd $ZOO_DATA_DIR; $ZOO_DIR/bin/zkServer.sh stop >> $ZOO_DATA_DIR/zookeeper.log 2>&1'"
     eval $cmd
     echo "stop zookeeper successful ..."
 }
@@ -194,7 +194,7 @@ function start_manager() {
         cmd="sed -i -e 's/^otter.zookeeper.cluster.default.*$/otter.zookeeper.cluster.default = ${ZOO_CLUSTER}/' /home/admin/manager/conf/otter.properties"
         eval $cmd
     fi
-    gosu admin bash -c "cd /home/admin/manager/bin ; sh startup.sh 1>>/tmp/start_manager.log 2>&1"
+    su - admin -c "cd /home/admin/manager/bin ; sh startup.sh 1>>/tmp/start_manager.log 2>&1"
 
     checkStart "manager" "nc 127.0.0.1 8080 -w 1 -z | wc -l" 120
 }
@@ -203,7 +203,7 @@ function start_manager() {
 function stop_manager() {
     # stop manager
     echo "stop manager"
-    gosu admin bash -c 'cd /home/admin/manager/bin; sh stop.sh 1>>/tmp/start_manager.log 2>&1'
+    su - admin -c 'cd /home/admin/manager/bin; sh stop.sh 1>>/tmp/start_manager.log 2>&1'
     echo "stop manager successful ..."
 }
 
@@ -217,7 +217,7 @@ function start_node() {
     eval $cmd
     cmd="sed -i -e 's/^otter.zookeeper.cluster.default.*$/otter.zookeeper.cluster.default = ${ZOO_CLUSTER}/' /home/admin/node/conf/otter.properties"
     eval $cmd    
-    cmd="gosu admin bash -c 'cd /home/admin/node/bin/ && echo ${ZOO_MY_ID:-1} > /home/admin/node/conf/nid && sh startup.sh ${ZOO_MY_ID:-1}>>/tmp/start_node.log 2>&1'"
+    cmd="su - admin -c 'cd /home/admin/node/bin/ && echo ${ZOO_MY_ID:-1} > /home/admin/node/conf/nid && sh startup.sh ${ZOO_MY_ID:-1}>>/tmp/start_node.log 2>&1'"
     eval $cmd
 
     checkStart "node" "nc 127.0.0.1 2088 -w 1 -z | wc -l" 120
@@ -233,7 +233,7 @@ function start_node() {
 # 停止node服务
 function stop_node() {
     echo "stop node"
-    gosu admin bash -c 'cd /home/admin/node/bin/ && sh stop.sh'
+    su - admin -c 'cd /home/admin/node/bin/ && sh stop.sh'
     echo "stop node successful ..."
 }
 
