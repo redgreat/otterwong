@@ -1,8 +1,8 @@
 FROM canal/otter-osbase:v1 AS base
 
-COPY ./aria2c /bin/aria2c
-COPY ./CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo
-COPY ./apache-zookeeper-3.7.0-bin.tar.gz /tmp/
+COPY ./docker/aria2c /bin/aria2c
+COPY ./docker/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo
+COPY ./docker/apache-zookeeper-3.7.0-bin.tar.gz /tmp/
 RUN \
     yum -y remove mysql-server && \
     yum -y localinstall https://dev.mysql.com/get/mysql57-community-release-el6-9.noarch.rpm && \
