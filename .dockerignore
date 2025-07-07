@@ -1,6 +1,7 @@
 .github/
 .dockerignore
 .gitignore
+scripts/
 docker-compose.yml
 Dockerfile
 
