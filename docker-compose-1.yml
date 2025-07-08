@@ -16,6 +16,7 @@ services:
       TZ: Asia/Shanghai
       RUN_MODE: ALL
       MANAGER_ADD: otter
+      ZOO_CLUSTER: otter:2181
       OTTER_MANAGER_MYSQL: "fn.wongcw.cn:3306"
       MYSQL_USER: "otter"
       MYSQL_PASSWORD: "Lunz2017"
