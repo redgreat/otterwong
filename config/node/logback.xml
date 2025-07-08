@@ -23,9 +23,9 @@
 					<fileNamePattern>../logs/${otter}/%d{yyyy-MM-dd}/${otter}-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
 					<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
 						<!-- or whenever the file size reaches 100MB -->
-						<maxFileSize>30MB</maxFileSize>
+						<maxFileSize>100MB</maxFileSize>
 					</timeBasedFileNamingAndTriggeringPolicy>
-					<maxHistory>60</maxHistory>
+					<maxHistory>7</maxHistory>
 				</rollingPolicy>
 				<encoder>
 					<pattern>
@@ -50,9 +50,9 @@
 					<!-- rollover daily -->
 					<fileNamePattern>../logs/${load}/%d{yyyy-MM-dd}/row_load-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
 					<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-						<maxFileSize>512MB</maxFileSize>
+						<maxFileSize>100MB</maxFileSize>
 					</timeBasedFileNamingAndTriggeringPolicy>
-					<maxHistory>60</maxHistory>
+					<maxHistory>7</maxHistory>
 				</rollingPolicy>
 				<encoder>
 					<pattern>%msg</pattern>
@@ -75,9 +75,9 @@
 					<!-- rollover daily -->
 					<fileNamePattern>../logs/${load}/%d{yyyy-MM-dd}/file_load-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
 					<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-						<maxFileSize>512MB</maxFileSize>
+						<maxFileSize>100MB</maxFileSize>
 					</timeBasedFileNamingAndTriggeringPolicy>
-					<maxHistory>60</maxHistory>
+					<maxHistory>7</maxHistory>
 				</rollingPolicy>
 				<encoder>
 					<pattern>%msg</pattern>
@@ -100,9 +100,9 @@
 					<!-- rollover daily -->
 					<fileNamePattern>../logs/${load}/%d{yyyy-MM-dd}/file_miss-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
 					<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-						<maxFileSize>512MB</maxFileSize>
+						<maxFileSize>100MB</maxFileSize>
 					</timeBasedFileNamingAndTriggeringPolicy>
-					<maxHistory>60</maxHistory>
+					<maxHistory>7</maxHistory>
 				</rollingPolicy>
 				<encoder>
 					<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %n %msg %n</pattern>
@@ -125,9 +125,9 @@
 					<!-- rollover daily -->
 					<fileNamePattern>../logs/${select}/%d{yyyy-MM-dd}/row_select-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
 					<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-						<maxFileSize>512MB</maxFileSize>
+						<maxFileSize>100MB</maxFileSize>
 					</timeBasedFileNamingAndTriggeringPolicy>
-					<maxHistory>60</maxHistory>
+					<maxHistory>7</maxHistory>
 				</rollingPolicy>
 				<encoder>
 					<pattern>%msg</pattern>
@@ -150,9 +150,9 @@
 					<!-- rollover daily -->
 					<fileNamePattern>../logs/${otter}/%d{yyyy-MM-dd}/wait-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
 					<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-						<maxFileSize>512MB</maxFileSize>
+						<maxFileSize>100MB</maxFileSize>
 					</timeBasedFileNamingAndTriggeringPolicy>
-					<maxHistory>60</maxHistory>
+					<maxHistory>7</maxHistory>
 				</rollingPolicy>
 				<encoder>
 					<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %msg%n</pattern>
