@@ -168,7 +168,7 @@ function start_manager() {
         eval $cmd
         cmd="sed -i -e 's/^otter.domainName.*$/otter.domainName = 172.16.1.12/' /home/admin/manager/conf/otter.properties"
         eval $cmd
-        cmd="sed -i -e 's/^otter.zookeeper.cluster.default.*$/otter.zookeeper.cluster.default = ${ZOO_CLUSTER}/' /home/admin/manager/conf/otter.properties"
+        cmd="sed -i -e 's/^otter.zookeeper.cluster.default.*$/otter.zookeeper.cluster.default = ${ZOO_CLUSTER}:2181/' /home/admin/manager/conf/otter.properties"
         eval $cmd
     fi
     su - admin -c "cd /home/admin/manager/bin ; sh startup.sh 1>>/tmp/start_manager.log 2>&1"
@@ -190,7 +190,7 @@ function start_node() {
     
     cmd="sed -i -e 's/^otter.manager.address.*$/otter.manager.address = ${MANAGER_ADD}:8081/' /home/admin/node/conf/otter.properties"
     eval $cmd
-    cmd="sed -i -e 's/^otter.zookeeper.cluster.default.*$/otter.zookeeper.cluster.default = ${ZOO_CLUSTER}/' /home/admin/node/conf/otter.properties"
+    cmd="sed -i -e 's/^otter.zookeeper.cluster.default.*$/otter.zookeeper.cluster.default = ${ZOO_CLUSTER}:2181/' /home/admin/node/conf/otter.properties"
     eval $cmd    
     cmd="su - admin -c 'cd /home/admin/node/bin/ && echo ${ZOO_MY_ID:-1} > /home/admin/node/conf/nid && sh startup.sh ${ZOO_MY_ID:-1}>>/tmp/start_node.log 2>&1'"
     eval $cmd
