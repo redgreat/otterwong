@@ -192,7 +192,7 @@ function start_node() {
     eval $cmd
     cmd="sed -i -e 's/^otter.zookeeper.cluster.default.*$/otter.zookeeper.cluster.default = ${ZOO_CLUSTER}:2181/' /home/admin/node/conf/otter.properties"
     eval $cmd
-    cmd="su - admin -c 'cd /home/admin/node/bin/ && echo ${ZOO_MY_ID:-1} > /home/admin/node/conf/nid && sh startup.sh ${ZOO_MY_ID:-1}>>/tmp/start_node.log 2>&1'"
+    cmd="su - admin -c 'cd /home/admin/node/bin/ && sh startup.sh >> /tmp/start_node.log 2>&1'"
     eval $cmd
 
     checkStart "node" "nc ${ZOO_CLUSTER} 2088 -w 1 -z | wc -l" 120
