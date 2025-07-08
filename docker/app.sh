@@ -105,7 +105,7 @@ function start_zookeeper() {
             echo "tickTime=$ZOO_TICK_TIME"
             echo "initLimit=$ZOO_INIT_LIMIT"
             echo "syncLimit=$ZOO_SYNC_LIMIT"
-            echo "clientPortAddress=0.0.0.0"
+            echo "clientPortAddress=${ZOO_CLUSTER}"
             echo "clientPort=2181"
             echo "quorumListenOnAllIPs=true"
             echo "autopurge.snapRetainCount=$ZOO_AUTOPURGE_SNAPRETAINCOUNT"
@@ -113,12 +113,12 @@ function start_zookeeper() {
             echo "maxClientCnxns=$ZOO_MAX_CLIENT_CNXNS"
             echo "standaloneEnabled=$ZOO_STANDALONE_ENABLED"
             echo "admin.enableServer=$ZOO_ADMINSERVER_ENABLED"
-            echo "admin.serverAddress=0.0.0.0"
+            echo "admin.serverAddress=${ZOO_CLUSTER}"
             echo "admin.serverPort=8018"
             echo "4lw.commands.whitelist=*"
         } >> "$CONFIG"
         if [[ -z $ZOO_SERVERS ]]; then
-            ZOO_SERVERS="server.1=localhost:2888:3888"
+            ZOO_SERVERS="server.1=${ZOO_CLUSTER}:2888:3888"
         fi
 
         for server in $ZOO_SERVERS; do
@@ -140,7 +140,7 @@ function start_zookeeper() {
     
     cmd="su admin -c 'mkdir -p $ZOO_DATA_DIR;mkdir -p $ZOO_LOG_DIR; cd $ZOO_DATA_DIR; $ZOO_DIR/bin/zkServer.sh start >> $ZOO_DATA_DIR/zookeeper.log 2>&1'"
     eval $cmd
-    checkStart "zookeeper" "echo stat | nc 127.0.0.1 2181 | grep -c Outstanding" 120
+    checkStart "zookeeper" "echo stat | nc ${ZOO_CLUSTER} 2181 | grep -c Outstanding" 120
 }
 
 # 停止zookeeper服务
@@ -173,7 +173,7 @@ function start_manager() {
     fi
     su - admin -c "cd /home/admin/manager/bin ; sh startup.sh 1>>/tmp/start_manager.log 2>&1"
 
-    checkStart "manager" "nc 127.0.0.1 8080 -w 1 -z | wc -l" 120
+    checkStart "manager" "nc ${ZOO_CLUSTER} 8080 -w 1 -z | wc -l" 120
 }
 
 # 停止manager服务
@@ -195,8 +195,8 @@ function start_node() {
     cmd="su - admin -c 'cd /home/admin/node/bin/ && echo ${ZOO_MY_ID:-1} > /home/admin/node/conf/nid && sh startup.sh ${ZOO_MY_ID:-1}>>/tmp/start_node.log 2>&1'"
     eval $cmd
 
-    checkStart "node" "nc 127.0.0.1 2088 -w 1 -z | wc -l" 120
-    node_is_run=$(nc 127.0.0.1 2088 -w 1 -z | wc -l)
+    checkStart "node" "nc ${ZOO_CLUSTER} 2088 -w 1 -z | wc -l" 120
+    node_is_run=$(nc ${ZOO_CLUSTER} 2088 -w 1 -z | wc -l)
     echo "node_is_run:"$node_is_run
     if [ $node_is_run == 0 ]; then
         echo -e "\033[32m ==> restart Node ... \033[0m"

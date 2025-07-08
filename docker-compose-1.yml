@@ -5,6 +5,9 @@ services:
     restart: unless-stopped
     container_name: otter
     hostname: otter
+    networks:
+      otter:
+        ipv4_address: 10.10.20.11
     ports:
       - "8080:8080"   # Manager Web 界面
       - "8018:8018"   # ZooKeeper Admin
@@ -12,14 +15,19 @@ services:
       - "2088:2088"   # Node 服务端口
       - "2089:2089"   # Node 下载端口
       - "2090:2090"   # Node MBean 端口
+    volumes:
+      - ./config/manager:/home/admin/manager/conf
+      - ./config/node:/home/admin/node/conf 
     environment:
       TZ: Asia/Shanghai
       RUN_MODE: ALL
-      MANAGER_ADD: otter
-      ZOO_CLUSTER: otter:2181
+      MANAGER_ADD: 10.10.20.11
+      ZOO_CLUSTER: 10.10.20.11:2181
       OTTER_MANAGER_MYSQL: "fn.wongcw.cn:3306"
       MYSQL_USER: "otter"
       MYSQL_PASSWORD: "Lunz2017"
+    extra_hosts:
+      - "otter:10.10.20.11"
     deploy:
       resources:
         limits:
@@ -35,3 +43,10 @@ services:
       nofile:
         soft: 65536
         hard: 65536
+networks:
+  otter:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.0.0/16
+          gateway: 10.10.20.1
