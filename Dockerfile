@@ -39,6 +39,8 @@ RUN \
     chmod +x /home/admin/*.sh  && \
     chmod +x /home/admin/bin/*.sh  && \
     chown admin: -R /home/admin && \ 
+    chown -R admin:admin /home/admin/node/conf && \
+    chmod -R 755 /home/admin/node/conf && \
     yum clean all && \    
     echo "otter.zookeeper.cluster.default = 127.0.0.1:2181" >> "/home/admin/node/conf/otter.properties" && \
     true
