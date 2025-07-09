@@ -46,6 +46,14 @@ GRANT ALL PRIVILEGES ON otter.* TO 'otter'@'%';
 FLUSH PRIVILEGES;
 ```
 
+canal账号所需权限
+```sql
+CREATE USER canal IDENTIFIED BY 'canal';  
+GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'canal'@'%';
+-- GRANT ALL PRIVILEGES ON *.* TO 'canal'@'%' ;
+FLUSH PRIVILEGES;
+```
+
 ### 3. 初始化数据库表结构
 
 `docker/otter-manager-schema.sql`

@@ -9,7 +9,7 @@ services:
       otter:
         ipv4_address: 10.10.20.11
     ports:
-      - "8080:8080"   # Manager Web 界面
+      - "8089:8089"   # Manager Web 界面
       - "8018:8018"   # ZooKeeper Admin
       # - "2181:2181"   # ZooKeeper 客户端
       # - "2088:2088"   # Node 服务端口
@@ -17,12 +17,17 @@ services:
       # - "2090:2090"   # Node MBean 端口
     volumes:
       - ./config/manager:/home/admin/manager/conf
-      - ./config/node:/home/admin/node/conf 
+      - ./config/node:/home/admin/node/conf
+      - otter_data:/home/admin/data
+      - otter_logs:/home/admin/logs
+      - otter_manager_data:/home/admin/manager/data
+      - otter_node_data:/home/admin/node/data 
     environment:
       TZ: Asia/Shanghai
       RUN_MODE: ALL
       MANAGER_ADD: 10.10.20.11
       ZOO_CLUSTER: 10.10.20.11
+      OTTER_DOMAIN_NAME: 172.16.1.12
       OTTER_MANAGER_MYSQL: "fn.wongcw.cn:3306"
       MYSQL_USER: "otter"
       MYSQL_PASSWORD: "Lunz2017"
@@ -43,6 +48,16 @@ services:
       nofile:
         soft: 65536
         hard: 65536
+volumes:
+  otter_data:
+    driver: local
+  otter_logs:
+    driver: local
+  otter_manager_data:
+    driver: local
+  otter_node_data:
+    driver: local
+
 networks:
   otter:
     driver: bridge
