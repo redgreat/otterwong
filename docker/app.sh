@@ -158,7 +158,7 @@ function start_manager() {
 
 
     if [ -n "${OTTER_MANAGER_MYSQL}" ] ; then
-        cmd="sed -i -e 's/^otter.database.driver.url.*$/otter.database.driver.url = jdbc:mysql:\/\/${OTTER_MANAGER_MYSQL}\/${MYSQL_DB}/?useUnicode=true&characterEncoding=UTF-8&useSSL=false' /home/admin/manager/conf/otter.properties"
+        cmd="sed -i -e 's/^otter.database.driver.url.*$/otter.database.driver.url = jdbc:mysql:\/\/${OTTER_MANAGER_MYSQL}\/${MYSQL_DB:-otter}\/?useUnicode=true&characterEncoding=UTF-8&useSSL=false/' /home/admin/manager/conf/otter.properties"
         eval $cmd
         cmd="sed -i -e 's/^otter.database.driver.username.*$/otter.database.driver.username = ${MYSQL_USER}/' /home/admin/manager/conf/otter.properties"
         eval $cmd
