@@ -9,7 +9,7 @@ services:
       otter:
         ipv4_address: 10.10.20.11
     ports:
-      - "8089:8080"   # Manager Web 界面
+      - "8089:8089"   # Manager Web 界面
       - "8018:8018"   # ZooKeeper Admin
       # - "2181:2181"   # ZooKeeper 客户端
       # - "2088:2088"   # Node 服务端口
@@ -28,6 +28,7 @@ services:
       MANAGER_ADD: 10.10.20.11
       ZOO_CLUSTER: 10.10.20.11
       OTTER_DOMAIN_NAME: 172.16.1.12
+      OTTER_PORT: 8089
       OTTER_MANAGER_MYSQL: "fn.wongcw.cn:3306"
       MYSQL_DB: "otter"
       MYSQL_USER: "otter"

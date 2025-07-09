@@ -168,12 +168,14 @@ function start_manager() {
         eval $cmd
         cmd="sed -i -e 's/^otter.domainName.*$/otter.domainName = ${OTTER_DOMAIN_NAME}/' /home/admin/manager/conf/otter.properties"
         eval $cmd
+        cmd="sed -i -e 's/^otter.port.*$/otter.port = ${OTTER_PORT:-8080}/' /home/admin/manager/conf/otter.properties"
+        eval $cmd
         cmd="sed -i -e 's/^otter.zookeeper.cluster.default.*$/otter.zookeeper.cluster.default = ${ZOO_CLUSTER}:2181/' /home/admin/manager/conf/otter.properties"
         eval $cmd
     fi
     su - admin -c "cd /home/admin/manager/bin ; sh startup.sh 1>>/tmp/start_manager.log 2>&1"
 
-    checkStart "manager" "nc ${ZOO_CLUSTER} 8080 -w 1 -z | wc -l" 120
+    checkStart "manager" "nc ${ZOO_CLUSTER} ${OTTER_PORT:-8080} -w 1 -z | wc -l" 120
 }
 
 # 停止manager服务
@@ -218,7 +220,7 @@ start_zookeeper
 if [ "${RUN_MODE}" == "ALL" ]; then
     echo -e "\033[32m ==> START RUN_MODE: "${RUN_MODE}"... \033[0m"
     start_manager
-    echo "you can visit manager link : http://$host:8080/ , just have fun !"
+    echo "you can visit manager link : http://${OTTER_DOMAIN_NAME}:${OTTER_PORT:-8080}/ , just have fun !"
     start_node    
 fi
 
@@ -230,7 +232,7 @@ fi
 if [ "${RUN_MODE}" == "MANAGER" ]; then
     echo -e "\033[32m ==> START RUN_MODE: "${RUN_MODE}"... \033[0m"
     start_manager  
-    echo "you can visit manager link : http://$host:8080/ , just have fun !"  
+    echo "you can visit manager link : http://${OTTER_DOMAIN_NAME}:${OTTER_PORT:-8080}/ , just have fun !"  
 fi
 
 echo -e "\033[32m ==> START SUCCESSFUL ... \033[0m"
