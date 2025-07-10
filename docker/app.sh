@@ -237,7 +237,7 @@ fi
 
 echo -e "\033[32m ==> START SUCCESSFUL ... \033[0m"
 
-netstat -tunlp
+lsof -nP -iTCP -sTCP:LISTEN
 tail -f /dev/null &
 waitterm
 
